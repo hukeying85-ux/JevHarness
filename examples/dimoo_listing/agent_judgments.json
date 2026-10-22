@@ -1,0 +1,15 @@
+{
+  "_provenance": "Authored by the coding agent from brief.json, not produced by a Jev model. Used only when run.py --agent-answers is given.",
+  "hero": {
+    "type": "choice",
+    "choice": "character_hero"
+  },
+  "tone": {
+    "type": "choice",
+    "choice": "dreamy_pastel"
+  },
+  "grounded": {
+    "type": "noul",
+    "noul": 0.9
+  }
+}
