@@ -1,0 +1,32 @@
+{
+ "answers": {
+  "hero": {
+   "type": "choice",
+   "probabilities": {
+    "character_hero": 1.0,
+    "unboxing_surprise": 0.0,
+    "collection_shelf": 0.0,
+    "gift_scene": 0.0
+   },
+   "choice": "character_hero",
+   "confidence": 1.0
+  }
+ },
+ "model": "mock-engineering-only",
+ "usage": {},
+ "cache_hit": false,
+ "request_hash": "2251caa50cc18e72e2039efcac66cf1617d82c4e6338f60fe57c64f6ea096763",
+ "elapsed_ms": 0.7800110000175664,
+ "request_elapsed_ms": 0.7800110000175664,
+ "usage_reported": false,
+ "client_metadata": {
+  "transport": "mock",
+  "requested_model": "typesafe-ai/jev",
+  "model_version_pinned": false,
+  "cache_namespace": "1da3b55cdc1d4d32a9a8cdbb42992579",
+  "cache_dir": "/home/user/JevHarness/examples/dimoo_listing/.jev-cache/1da3b55cdc1d4d32a9a8cdbb42992579",
+  "actual_model": "mock-engineering-only",
+  "gateway": {}
+ },
+ "response_digest": "fba3b543628754ff3b8a07f72af0478538ac0c0ae586ec839416da6b7c687c81"
+}
