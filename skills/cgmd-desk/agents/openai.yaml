@@ -1,0 +1,4 @@
+interface:
+  display_name: "CGMD Desk Client"
+  short_description: "Drive DESKTOP-IEUDGS5 via the 0fuye single-base client without user command pasting"
+  default_prompt: "Use $cgmd-desk to inspect DESKTOP-IEUDGS5 capabilities and dispatch or verify GROMACS GPU jobs via 0fuye."

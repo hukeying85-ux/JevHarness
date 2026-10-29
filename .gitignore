@@ -22,3 +22,18 @@ node_modules/
 /IMPLEMENTATION.md
 /REVIEW.md
 /SCALE_EXPERIMENT.md
+
+# Heavy molecular dynamics trajectories (0fuye hard rule #4: never commit >1MB trajectories).
+*.xtc
+*.trr
+*.tpr
+*.gro
+*.edr
+*.edv
+*.cpt
+*.h5
+*.dcd
+
+# Project-scoped local skill discovery mirrors.
+/.agents/
+/.claude/

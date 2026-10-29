@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy the shared JevHarness skill into Codex or Claude Code discovery paths."""
+"""Copy shared JevHarness skills into Codex or Claude Code discovery paths."""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +8,17 @@ import shutil
 import sys
 
 SKILL_NAME = 'jev-harness'
+SKILLS_ROOT = Path(__file__).resolve().parents[1] / 'skills'
+
+
+def available_skills(skills_root: Path = SKILLS_ROOT) -> tuple[str, ...]:
+    if not skills_root.is_dir():
+        return (SKILL_NAME,)
+    found = tuple(sorted(
+        entry.name for entry in skills_root.iterdir()
+        if entry.is_dir() and not entry.is_symlink() and (entry / 'SKILL.md').is_file()
+    ))
+    return found or (SKILL_NAME,)
 
 
 def file_snapshot(directory: Path) -> dict[str, bytes]:
@@ -42,10 +53,11 @@ def install_skill(source: Path, *, target: str, scope: str,
         raise ValueError(f'The installation root must already be a directory: {base}')
     source = source.absolute()
     expected = file_snapshot(source)
+    skill_name = source.name
     clients = ('codex', 'claude') if target == 'both' else (target,)
     plan = []
     for client in clients:
-        destination = base / ('.agents' if client == 'codex' else '.claude') / 'skills' / SKILL_NAME
+        destination = base / ('.agents' if client == 'codex' else '.claude') / 'skills' / skill_name
         if destination.exists() or destination.is_symlink():
             if file_snapshot(destination) != expected:
                 raise ValueError(f'Refusing to overwrite a different installation: {destination}')
@@ -63,25 +75,36 @@ def install_skill(source: Path, *, target: str, scope: str,
 
 
 def main(argv=None):
+    choices = (*available_skills(), 'all')
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--skill', choices=choices, default=SKILL_NAME,
+                        help=f'Skill bundle to install (default: {SKILL_NAME})')
     parser.add_argument('--target', choices=('codex', 'claude', 'both'), required=True)
     parser.add_argument('--scope', choices=('project', 'user'), default='project')
     parser.add_argument('--project', type=Path,
                         help='Existing project directory (default: current directory)')
     parser.add_argument('--dry-run', action='store_true', help='Show paths without writing files')
     args = parser.parse_args(argv)
-    source = Path(__file__).resolve().parents[1] / 'skills' / SKILL_NAME
+    selected = available_skills() if args.skill == 'all' else (args.skill,)
+    plans: list[tuple[str, Path]] = []
     try:
-        plan = install_skill(source, target=args.target, scope=args.scope,
-                             project=args.project, dry_run=args.dry_run)
+        for name in selected:
+            plans.extend(install_skill(
+                SKILLS_ROOT / name,
+                target=args.target,
+                scope=args.scope,
+                project=args.project,
+                dry_run=args.dry_run,
+            ))
     except (ValueError, OSError) as exc:
         print(f'Installation failed: {exc}', file=sys.stderr)
         return 1
-    for action, path in plan:
+    for action, path in plans:
         label = 'Would copy' if args.dry_run and action == 'copy' else 'Installed' if action == 'copy' else 'Unchanged'
         print(f'{label}: {path}')
     if not args.dry_run:
-        print('Invoke $jev-harness in Codex or /jev-harness in Claude Code.')
+        invocations = ' / '.join(f'${name} or /{name}' for name in selected)
+        print(f'Invoke {invocations} in Codex or Claude Code.')
         print('If discovery has not updated, restart the host session.')
     return 0
 
