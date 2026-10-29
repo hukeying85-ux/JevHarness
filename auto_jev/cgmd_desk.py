@@ -312,6 +312,7 @@ def dispatch_job(
     args: dict[str, Any] | None = None,
     *,
     checkout_dir: Path | str | None = None,
+    write_repo: Path | str | None = None,
     lan_host: str = "",
     bridge_port: int = DEFAULT_BRIDGE_PORT,
     bridge_token: str = "",
@@ -320,15 +321,18 @@ def dispatch_job(
     timeout: int = 1800,
     interval: int = 15,
 ) -> dict[str, Any]:
-    """Dispatch a job following ``docs/new_session_prompt_zh.md`` §3 degradation:
+    """Dispatch a job following ``docs/new_session_prompt_zh.md`` §1.2 & §3:
 
     1. LAN bridge (``core.desk_bridge``, ``<1 s``) ONLY when ``lan_host`` is
        given and we are not inside an outbound-filtered cloud sandbox.
-    2. Git mailbox (``core.hub_mailbox``, ``<=60 s``) on ``refs/heads/hub/mailbox``.
+    2. Git mailbox (``core.hub_mailbox``, ``<=60 s``): queues into ``write_repo``
+       (if provided for peer-repo dispatch) or ``0fuye``, and reads the receipt
+       back from ``0fuye``'s ``refs/heads/hub/mailbox``.
     """
     checkout = ensure_0fuye_client(checkout_dir, mailbox_ref=mailbox_ref, sync=True)
     hub_mailbox, desk_bridge = load_0fuye_modules(checkout)
     payload = dict(args or {})
+    queue_repo = Path(write_repo).expanduser().resolve() if write_repo is not None else checkout
 
     if lan_host and not is_cloud_sandbox():
         try:
@@ -350,7 +354,7 @@ def dispatch_job(
 
     try:
         job_id = hub_mailbox.send(
-            str(checkout),
+            str(queue_repo),
             kind,
             payload,
             note=note,
@@ -415,6 +419,8 @@ def build_status_report(checkout_dir: Path | str | None = None, *, sync: bool = 
             "state": mailbox_worker.get("state"),
             "queued": mailbox_worker.get("queued"),
             "host": mailbox_worker.get("host"),
+            "peer_repos": mailbox_worker.get("peer_repos") or [],
+            "peers": mailbox_worker.get("peers") or [],
         },
         "latest_ping": latest_ping,
         "latest_smoke_verification": smoke_verification,
@@ -471,6 +477,7 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--interval", type=int, default=15)
     run_p.add_argument("--lan-host", default="", help="Optional LAN/Tailscale IP for laptop sub-second bridge")
     run_p.add_argument("--bridge-port", type=int, default=DEFAULT_BRIDGE_PORT)
+    run_p.add_argument("--write-repo", type=Path, help="Optional peer repository checkout to queue inbox/<id>.json")
 
     args = parser.parse_args(argv)
     sync = not args.no_sync
@@ -529,6 +536,7 @@ def main(argv: list[str] | None = None) -> int:
             args.kind,
             payload,
             checkout_dir=args.checkout,
+            write_repo=args.write_repo,
             lan_host=args.lan_host,
             bridge_port=args.bridge_port,
             note=args.note,

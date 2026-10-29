@@ -238,6 +238,46 @@ def test_latest_outbox_by_kind_sorts_by_iso_finished_at_over_lexical_id(monkeypa
     assert latest["id"] == "20261029T075318-79cd"
 
 
+def test_dispatch_supports_peer_write_repo_and_reads_0fuye_outbox(monkeypatch, tmp_path):
+    desk_checkout = tmp_path / "0fuye"
+    peer_checkout = tmp_path / "JevHarness"
+    desk_checkout.mkdir()
+    peer_checkout.mkdir()
+
+    seen: dict[str, str] = {}
+
+    class FakeBridgeError(RuntimeError):
+        pass
+
+    class FakeMailboxError(RuntimeError):
+        pass
+
+    def fake_send(repo, kind, *_a, **_kw):
+        seen["write_repo"] = repo
+        return "20261029T083000-beef"
+
+    def fake_wait(repo, job_id, *_a, **_kw):
+        seen["read_repo"] = repo
+        return {"id": job_id, "kind": "ping", "status": "ok"}
+
+    fake_bridge = types.SimpleNamespace(BridgeError=FakeBridgeError)
+    fake_mailbox = types.SimpleNamespace(
+        SCHEMA_RESULT="cgmd.mailbox.result.v1",
+        MailboxError=FakeMailboxError,
+        send=fake_send,
+        wait=fake_wait,
+    )
+
+    monkeypatch.setattr(cgmd_desk, "ensure_0fuye_client", lambda *_a, **_kw: desk_checkout)
+    monkeypatch.setattr(cgmd_desk, "load_0fuye_modules", lambda *_a, **_kw: (fake_mailbox, fake_bridge))
+    monkeypatch.setattr(cgmd_desk, "is_cloud_sandbox", lambda *_a, **_kw: True)
+
+    result = cgmd_desk.dispatch_job("ping", write_repo=peer_checkout)
+    assert result["status"] == "ok"
+    assert seen["write_repo"] == str(peer_checkout.resolve())
+    assert seen["read_repo"] == str(desk_checkout.resolve())
+
+
 def test_install_skill_supports_cgmd_desk_and_all(tmp_path):
     installer = _load_installer()
     assert "cgmd-desk" in installer.available_skills()
