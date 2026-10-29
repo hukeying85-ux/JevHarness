@@ -22,3 +22,12 @@ node_modules/
 /IMPLEMENTATION.md
 /REVIEW.md
 /SCALE_EXPERIMENT.md
+# Never commit heavy GROMACS / MD simulation trajectory or binary artifacts.
+*.xtc
+*.trr
+*.tpr
+*.cpt
+*.gro
+*.edr
+*.h5
+*.dcd

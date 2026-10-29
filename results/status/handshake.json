@@ -1,0 +1,10 @@
+{
+  "schema": "jev.desktop_hub.handshake.v1",
+  "round": 1,
+  "arena_state": "ready",
+  "local_state": "pending",
+  "requested_at": "2026-10-29T15:42:06+08:00",
+  "requested_at_utc": "2026-10-29T07:42:06Z",
+  "source_branch": "arena/f5038599-jevharness",
+  "note": "Install arena/32cd826e-0fuye desktop-hub & verify desktop-base handshake"
+}

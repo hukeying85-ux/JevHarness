@@ -1,0 +1,4 @@
+interface:
+  display_name: "Desktop Hub"
+  short_description: "Bridge sessions to the Windows GPU workstation (0fuye + desktop-base)"
+  default_prompt: "Use $desktop-hub to check live workstation telemetry, verify the desktop base handshake on the current branch, and coordinate GPU or sync jobs hands-free."

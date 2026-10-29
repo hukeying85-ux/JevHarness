@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy the shared JevHarness skill into Codex or Claude Code discovery paths."""
+"""Copy JevHarness skills into Codex or Claude Code discovery paths."""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +8,7 @@ import shutil
 import sys
 
 SKILL_NAME = 'jev-harness'
+AVAILABLE_SKILLS = ('jev-harness', 'desktop-hub')
 
 
 def file_snapshot(directory: Path) -> dict[str, bytes]:
@@ -29,7 +30,8 @@ def file_snapshot(directory: Path) -> dict[str, bytes]:
 
 def install_skill(source: Path, *, target: str, scope: str,
                   project: Path | None = None, user_home: Path | None = None,
-                  dry_run: bool = False) -> list[tuple[str, Path]]:
+                  dry_run: bool = False,
+                  skill_name: str | None = None) -> list[tuple[str, Path]]:
     """Preflight every destination before copying; leave existing content intact."""
     if target not in ('codex', 'claude', 'both') or scope not in ('project', 'user'):
         raise ValueError('Unknown target or scope')
@@ -41,11 +43,12 @@ def install_skill(source: Path, *, target: str, scope: str,
     if not base.is_dir():
         raise ValueError(f'The installation root must already be a directory: {base}')
     source = source.absolute()
+    resolved_name = skill_name or source.name or SKILL_NAME
     expected = file_snapshot(source)
     clients = ('codex', 'claude') if target == 'both' else (target,)
     plan = []
     for client in clients:
-        destination = base / ('.agents' if client == 'codex' else '.claude') / 'skills' / SKILL_NAME
+        destination = base / ('.agents' if client == 'codex' else '.claude') / 'skills' / resolved_name
         if destination.exists() or destination.is_symlink():
             if file_snapshot(destination) != expected:
                 raise ValueError(f'Refusing to overwrite a different installation: {destination}')
@@ -64,24 +67,36 @@ def install_skill(source: Path, *, target: str, scope: str,
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--skill', choices=(*AVAILABLE_SKILLS, 'all'), default=SKILL_NAME,
+                        help='Skill bundle to install (default: jev-harness; pass "all" to install every bundled skill)')
     parser.add_argument('--target', choices=('codex', 'claude', 'both'), required=True)
     parser.add_argument('--scope', choices=('project', 'user'), default='project')
     parser.add_argument('--project', type=Path,
                         help='Existing project directory (default: current directory)')
     parser.add_argument('--dry-run', action='store_true', help='Show paths without writing files')
     args = parser.parse_args(argv)
-    source = Path(__file__).resolve().parents[1] / 'skills' / SKILL_NAME
+    skills_root = Path(__file__).resolve().parents[1] / 'skills'
+    selected = AVAILABLE_SKILLS if args.skill == 'all' else (args.skill,)
+    plans: list[tuple[str, Path]] = []
     try:
-        plan = install_skill(source, target=args.target, scope=args.scope,
-                             project=args.project, dry_run=args.dry_run)
+        # Preflight all selected skills before copying any of them.
+        for name in selected:
+            plans.extend(install_skill(skills_root / name, target=args.target, scope=args.scope,
+                                       project=args.project, dry_run=True, skill_name=name))
+        if not args.dry_run:
+            plans = []
+            for name in selected:
+                plans.extend(install_skill(skills_root / name, target=args.target, scope=args.scope,
+                                           project=args.project, dry_run=False, skill_name=name))
     except (ValueError, OSError) as exc:
         print(f'Installation failed: {exc}', file=sys.stderr)
         return 1
-    for action, path in plan:
+    for action, path in plans:
         label = 'Would copy' if args.dry_run and action == 'copy' else 'Installed' if action == 'copy' else 'Unchanged'
         print(f'{label}: {path}')
     if not args.dry_run:
-        print('Invoke $jev-harness in Codex or /jev-harness in Claude Code.')
+        invocations = ' / '.join(f'${n} (or /{n})' for n in selected)
+        print(f'Invoke {invocations} in Codex or Claude Code.')
         print('If discovery has not updated, restart the host session.')
     return 0
 
