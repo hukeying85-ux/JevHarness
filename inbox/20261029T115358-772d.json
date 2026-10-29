@@ -1,0 +1,14 @@
+{
+  "args": {
+    "command": "powershell.exe -NoLogo -NoProfile -NonInteractive -Command \"$p = 'F:\\0wsh\\asd'; if (Test-Path -LiteralPath $p) { 'TARGET_EXISTS'; Get-ChildItem -LiteralPath $p -Force -Recurse -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 30 | ForEach-Object { Write-Output ('{0:yyyy-MM-dd HH:mm:ss}|{1}|{2}' -f $_.LastWriteTime, $_.Length, $_.FullName) } } else { 'TARGET_MISSING'; $q='F:\\0wsh'; if (Test-Path -LiteralPath $q) { Get-ChildItem -LiteralPath $q -Force | Select-Object -First 30 -ExpandProperty FullName } }",
+    "timeout_s": 300
+  },
+  "created_at": "2026-10-29T11:53:58+0000",
+  "from": "user",
+  "host": "e2b.local",
+  "id": "20261029T115358-772d",
+  "kind": "shell",
+  "note": "",
+  "schema": "cgmd.mailbox.request.v1",
+  "timeout_s": 300
+}
