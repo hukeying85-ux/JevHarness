@@ -323,13 +323,30 @@ def probe_0fuye_remote(
                 key=_outbox_sort_key,
             )
             outbox_ids = [Path(p).stem for p in outbox_paths]
-            if outbox_paths:
-                latest_outbox = _read_git_blob_json(tmp, mailbox_sha, outbox_paths[-1])
-            for candidate in reversed(outbox_paths):
+            recent_docs: list[tuple[float, dict[str, Any]]] = []
+            for candidate in reversed(outbox_paths[-8:]):
                 doc = _read_git_blob_json(tmp, mailbox_sha, candidate)
-                if doc and doc.get("kind") == "ping" and isinstance(doc.get("detail"), dict):
+                if not doc:
+                    continue
+                fin = str(doc.get("finished_at") or "")
+                try:
+                    epoch = datetime.fromisoformat(fin).timestamp()
+                except ValueError:
+                    epoch = 0.0
+                recent_docs.append((epoch, doc))
+            recent_docs.sort(key=lambda item: item[0], reverse=True)
+            if recent_docs:
+                latest_outbox = recent_docs[0][1]
+            for _, doc in recent_docs:
+                if doc.get("kind") == "ping" and isinstance(doc.get("detail"), dict):
                     latest_ping = doc
                     break
+            if latest_ping is None:
+                for candidate in reversed(outbox_paths[:-8]):
+                    doc = _read_git_blob_json(tmp, mailbox_sha, candidate)
+                    if doc and doc.get("kind") == "ping" and isinstance(doc.get("detail"), dict):
+                        latest_ping = doc
+                        break
 
         worker_stamp = (mailbox_worker or {}).get("generated_at") or (heartbeat or {}).get("at") or ""
         worker_age_s = parse_iso_age_seconds(worker_stamp)

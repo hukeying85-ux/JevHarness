@@ -23,7 +23,7 @@
 
 | 检查维度 | 实测状态 | 本会话实测证据 |
 | --- | --- | --- |
-| **`DESKTOP-IEUDGS5` 上的 `0fuye` 守护 (`CGMD-Hub-Poll`)** | **在线运行中（已实测）** | 远端只读探测 `0fuye@arena/32cd826e-0fuye`：`hub_mailbox.json` 最新回报于 `2026-10-29T15:32:58+08:00`；刚刚完成 `ping`（`20261029T073039-b78f`）与 GPU `100 ps` 烟测（`20261029T073120-60bd`，`GROMACS 2025.1 CUDA` + `NVIDIA RTX A4000 16GB`，实测性能 `576.012 ns/day`） |
+| **`DESKTOP-IEUDGS5` 上的 `0fuye` 守护 (`CGMD-Hub-Poll`)** | **在线运行中（已实测）** | 远端只读探测 `0fuye@arena/32cd826e-0fuye`：`hub_mailbox.json` 最新回报于 `2026-10-29T15:32:58+08:00`；刚刚完成 `ping`（`20261029T073039-b78f`）与 GPU `100 ps` 烟测（`20261029T073120-60bd`，`GROMACS 2025.1 CUDA` + `NVIDIA RTX A4000 16GB`，最新实测性能 `617.155 ns/day`） |
 | **`DESKTOP-IEUDGS5` 上的 `Arena Desk` 面板** | **已部署运行（`0fuye` 自检报告）** | `C:\0apps\ArenaDesk` `v2.8.0`（`127.0.0.1:18765` HTTP `200`，18 项自检 `15 pass / 3 warn / 0 fail`） |
 | **跨仓库「台式机基座」(`git-sync-hub` → `JevHarness`)** | **未回执（65 秒实测超时，已定位 5 个根因并备好修复包）** | 向 `origin/arena/f5038599-jevharness` 推送纯数据握手 `results/status/handshake.json`（提交 `4fe0699`）并轮询等待 65 秒，未收到 `hub_sync_receipt.json` 回传 |
 | **当前云端沙箱 ↔ 台式机局域网直连 (`:8765`)** | **跨公网隔离（符合预期）** | 台式机已上报内网/组网地址 `100.84.137.117`（Tailscale）、`192.168.110.226`（局域网），同局域网或同 Tailscale/ZeroTier 节点的笔记本可直接毫秒级调用 |
