@@ -390,5 +390,9 @@ def test_build_martini3_system_end_to_end_when_tools_present(tmp_path):
     top_text = (tmp_path / "magainin2_run" / "topol.top").read_text(encoding="utf-8")
     assert '#include "martini_v3.0.0.itp"' in top_text
     assert '#include "Protein_0.itp"' in top_text
+    for mdp_name in ("em.mdp", "eq.mdp", "prod.mdp"):
+        mdp_text = (tmp_path / "magainin2_run" / mdp_name).read_text(encoding="utf-8")
+        assert "@" not in mdp_text
+
 
 

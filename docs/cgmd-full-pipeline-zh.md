@@ -64,35 +64,38 @@
 
 ---
 
-## 四、一步打通 `0fuye` 基座 + 实测 100 ns 全自动粗粒化分子动力学提示词
+## 四、新开对话直接粘贴的提示词（不依赖旧会话分支，测试 100 ns 自动化粗粒化分子动力学）
 
-### 提示词 1（发给 `hukeying85-ux/0fuye` 会话：打通基座全部入口并实跑 100 ns 自动化粗粒化动力学）
+### 提示词 1（在 `hukeying85-ux/0fuye` **新开对话**粘贴：打通基座 + 实跑 100 ns 自动化粗粒化动力学）
 
 ```text
-全程你来操作，我不在台式机敲任何命令。请严格在 arena/32cd826e-0fuye 分支一次性把 DESKTOP-IEUDGS5 基座的粗粒化分子动力学自动化链路彻底打通，并实跑通过一个 100 ns 完整任务：
+全程你来操作，我不在台式机敲任何命令。这是一个全新的对话，请只在你当前自己的会话分支上提交代码（需要落主干时走 PR 合入 main，严禁切换或直接推送其他工作分支；信箱派单走独立的 refs/heads/hub/mailbox）。
 
-1. 修复 code/cgmd 的 4 个实测问题（保持纯 ASCII，现有单测全绿）：
-   - martini-forcefields 不在 PyPI：支持自动浅克隆 https://github.com/marrink-lab/martini-forcefields.git 并定位 martini_forcefields/regular/v3.0.0/gmx_files（同时兼容 CGMD_MARTINI3_DIR）。
-   - pipeline.py 调用 martinize2 时：去掉外部 vermouth_files 的 -ff-dir/-map-dir（直接用 vermouth 内置 martini3001，避免 section '[]' 解析报错）；将单字符二级结构展开为残基长度（如 "H" * len(seq)）；engine.run 支持并传入 cwd=self.cfg.workdir，确保 Protein_0.itp 生成在 workdir 内。
-   - topology.py 生成 topol.top 时：把引用的 martini_v3.0.0*.itp 复制到 workdir 同目录并改写为平铺 #include "martini_v3.0.0.itp"，彻底规避 Windows 跨盘符 relpath 与 gmx grompp 2025.1 深路径 0xC0000005。
-   - engine.py 在 Windows 下优先自动识别 F:\gromacs-2025.1-SM86\gromacs-2025.1-SM86\bin\gmx.exe（及 CGMD_GMX_BIN）。
+目标：通过 DESKTOP-IEUDGS5 基座（Windows 10 + RTX A4000 16GB + 原生 GROMACS 2025.1 CUDA，装在 F:\gromacs-2025.1-SM86）把自动化粗粒化分子动力学链路打通，并当场实测跑完一个 100 ns 的 Martini 3 粗粒化分子动力学任务：
 
-2. 把基座三路入口（hub/mailbox + 跨仓 peer_repos + :8765 Bridge）统一接通到 Windows 原生硬件（严禁走 WSL Ubuntu-18.04，严禁非 ASCII 字符，遵守 PowerShell 5.1 语法）：
-   - 新增共用执行脚本 skills/cgmd-hub/runner/Run-MartiniPipeline.ps1，并在 Invoke-CgmdMailbox.ps1 与 Invoke-CgmdBridge.ps1 中同时把 kind='pipeline' 接通到该脚本；将 Invoke-CgmdPoll.ps1 / Invoke-CgmdMailbox.ps1 单任务超时放宽至 5400 秒以覆盖 100 ns+ 生产跑。
-   - 自动复用台式机已有的 C:\Users\BNI\AppData\Local\Programs\Python\Python312\python.exe，首次在 skills\cgmd-hub\state\py312-cgmd 建立 venv 并静默安装 vermouth、insane、MDAnalysis、matplotlib，缓存浅克隆 marrink-lab/martini-forcefields。
-   - 在 F:\cgmd_runs\<job_id>（不存在 F: 则回退 state\runs\<job_id>）执行完整 12 步流程：seq2pdb -> martinize2 -> insane (POPE:POPG=3:1, 0.15 M NaCl, 310 K) -> 平铺 topol.top & index.ndx -> gmx.exe EM -> NPT POSRES 平衡 -> RTX A4000 GPU 生产动力学 (-nb gpu -pme cpu -bonded gpu -gpu_id 0) -> MDAnalysis 轨迹分析 -> SVG 矢量图与 summary_metrics.json。
-   - 跨仓基座打通：在 Invoke-CgmdMailbox.ps1 的 Invoke-PeerCycle 中，除默认 refs/heads/hub/mailbox 外，同时自动扫描 peer_repos（如 hukeying85-ux/JevHarness）下所有 refs/heads/arena/* 分支的 inbox/*.json（按 mailbox-ledger.json 的 job_id 去重），使受单分支推送限制的外部仓库 Arena 会话也能直接通过自身分支向基座投递 pipeline 任务，并将 < 1 MB 的 summary_metrics.json 与 figures/*.svg 回传至 outbox/<job_id>.json 及 results/runs/<job_id>/（严禁提交 .xtc/.trr/.tpr/.gro/.edr/.cpt）。
+1. 同步基座代码到当前新分支并修复 4 个实测建模问题：
+   - 若当前分支（源自 main）尚无 core/ 与 skills/，先 git fetch origin 将远端已有基座分支代码合并进当前会话分支（--allow-unrelated-histories）。
+   - 修复 code/cgmd（纯 ASCII、单测全绿）：(a) 自动浅克隆 https://github.com/marrink-lab/martini-forcefields.git 定位 regular/v3.0.0/gmx_files（PyPI 无 martini-forcefields）；(b) martinize2 不传外部 vermouth_files 的 -ff-dir/-map-dir（直接用内置 martini3001），二级结构展开为残基长度（"H" * len(seq)），并以 cwd=workdir 运行确保 Protein_0.itp 落在 workdir；(c) topol.top 引用的 martini_v3.0.0*.itp 平铺复制到 workdir 同目录写成 #include "martini_v3.0.0.itp"；(d) Martini 3 为 reaction-field 静电，GPU 运行参数用 -nb gpu -bonded gpu -gpu_id 0（不带 -pme）。
+   - 在 Invoke-CgmdMailbox.ps1 / Invoke-CgmdBridge.ps1 补齐 kind='pipeline'（调用台式机原生 Python 3.12 + 原生 gmx.exe，不走 WSL），在 Invoke-JobDeskfix 支持更新 config branch，在 Invoke-PeerCycle 支持扫描 peer_repos 的 hub/mailbox 与 arena/* 分支 inbox/*.json，单任务超时放宽至 5400 秒；推送当前分支并通过 gh pr create / gh pr merge 合入 main。
 
-3. 推送到 origin/arena/32cd826e-0fuye 后，等待 <= 90 秒让 CGMD-Hub-Poll 自动拉取自升级（若 :8765 Bridge 需加载新脚本则发一次 --kind sync --json-args '{"desk":true}'），随后直接通过基座投递并跑完一个 100 ns 真实粗粒化分子动力学任务（Magainin-2: GIGKFLHSAKKFGKAFVGEIMNS，POPE:POPG=3:1，equilibration_ns=10，production_ns=100，310 K，0.15 M NaCl），轮询直到状态为 ok，核验实测 ns/day、summary_metrics.json（< 1 MB）与 4 张 SVG 图后向我汇报。
+2. 先通过基座信箱确认链路在线：
+   - 运行 python3 -m core.hub_mailbox caps 与 python3 -m core.hub_mailbox run --kind ping --timeout 300，确认 DESKTOP-IEUDGS5 在线。
+
+3. 直接通过基座实测跑通 100 ns 自动化 Martini 3 粗粒化分子动力学任务（Magainin-2: GIGKFLHSAKKFGKAFVGEIMNS，POPE:POPG=3:1，310 K，0.15 M NaCl，equilibration_ns=10，production_ns=100）：
+   - 若台式机值守已加载 kind='pipeline'，直接投递 --kind pipeline（timeout 5400）一步跑完。
+   - 若台式机值守尚未切到新脚本（pipeline 返回 unsupported），不要让我去台式机手动切分支：直接在沙箱先完成 Stage 1-6 建系（生成平铺 .itp、topol.top、index.ndx、em/eq/prod.mdp 与带 CRYST1 盒子的初始输入），借助 hub/mailbox 在台式机本地映射目录 C:\cgmd\0fuye\skills\cgmd-hub\state\mailbox 下暂存小文本输入，通过已在线的 --kind gmx 依次自动执行 grompp 与 RTX A4000 GPU mdrun（em -> 10 ns eq -> 100 ns prod，使用 -nb gpu -bonded gpu -gpu_id 0，输出前缀指到 C:\cgmd\0fuye\skills\cgmd-hub\state\cgmd_100ns_* 以确保 .tpr/.xtc/.gro/.edr 留在台式机本地绝不进 Git）及非交互 gmx distance / gyrate / energy 分析，跑完立即清理 hub/mailbox 暂存目录。
+
+4. 汇总生成 < 1 MB 的 summary_metrics.json 与 SVG 矢量图，向我汇报实测工单号、GPU 速度（ns/day）、100 ns 完成步数、膜插入深度与回执详情（未实测项必须标未验证，严禁编造）。
 ```
 
-### 提示词 2（`0fuye` 基座打通后，发给 `JevHarness` 等外部客户端会话：通过基座直接跑 100 ns 自动化任务）
+### 提示词 2（在 `JevHarness` 等外部项目 **新开对话**粘贴：通过 `0fuye` 基座执行 100 ns 自动化粗粒化动力学）
 
 ```text
-全程你来操作，我不在台式机敲任何命令。只把 hukeying85-ux/0fuye（分支 arena/32cd826e-0fuye）当作客户端基座使用，严禁新建第二套底座脚本，严禁把轨迹文件（.xtc/.trr/.tpr/.gro/.edr/.cpt）提交进 Git。
+全程你来操作，我不在台式机敲任何命令。这是一个全新的对话，请只在你当前自己的会话分支上操作，严禁新建第二套台式机底座或轮询脚本，严禁把轨迹/二进制文件（.xtc/.trr/.tpr/.gro/.edr/.cpt）提交进 Git。
 
-请直接通过 DESKTOP-IEUDGS5 基座执行一次 100 ns 自动化 Martini 3 粗粒化分子动力学完整任务并验收：
-1. 先拉取 0fuye 最新状态确认 DESKTOP-IEUDGS5 在线且 peer_repos 包含当前仓库。
-2. 对抗菌肽序列（Magainin-2: GIGKFLHSAKKFGKAFVGEIMNS，POPE:POPG=3:1，310 K，0.15 M NaCl，equilibration_ns=10，production_ns=100）完成理化预筛，构造 kind="pipeline" 任务（inbox/<job_id>.json）推送至当前工作分支（或可用时走 hub/mailbox），触发基座自动拾取并在 RTX A4000 + 原生 GROMACS 2025.1 CUDA 上执行完整 12 步粗粒化动力学。
-3. 轮询 0fuye 的 hub/mailbox outbox/<job_id>.json 及 results/runs/<job_id>/ 直到任务完成，取回 < 1 MB 的 summary_metrics.json 与矢量图（*.svg），汇报实测 GPU 速度（ns/day）、膜插入深度 z_distance_mean_nm、脂质序参数 lipid_order 与成孔指标 pore_score_mean。
+请把公开仓库 https://github.com/hukeying85-ux/0fuye.git 作为只读客户端拉到 /tmp/0fuye（若 main 分支尚无 core/hub_mailbox.py，则自动查找并检出远端包含 core/hub_mailbox.py 的最新分支），通过 DESKTOP-IEUDGS5 基座实测执行一次 100 ns 自动化 Martini 3 粗粒化分子动力学任务：
+1. 读取基座能力卡与最新状态，确认 DESKTOP-IEUDGS5 在线且 peer_repos 已包含当前仓库。
+2. 对抗菌肽 Magainin-2（GIGKFLHSAKKFGKAFVGEIMNS，POPE:POPG=3:1，310 K，0.15 M NaCl，equilibration_ns=10，production_ns=100）完成理化预筛与平铺 Martini 3 拓扑建系校验。
+3. 通过对端信箱机制（当前仓库分支 inbox/<job_id>.json 或 hub/mailbox，从 /tmp/0fuye 读取 outbox/<job_id>.json 回执）驱动 DESKTOP-IEUDGS5 的 RTX A4000 + 原生 GROMACS 2025.1 CUDA 跑完 100 ns 粗粒化生产动力学。
+4. 取回 < 1 MB 的 summary_metrics.json 与 *.svg 矢量图，汇报实测工单号、GPU 性能（ns/day）、膜插入深度 z_distance_mean_nm、脂质序参数与成孔指标。
 ```

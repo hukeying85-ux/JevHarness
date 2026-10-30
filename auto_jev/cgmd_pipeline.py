@@ -250,19 +250,35 @@ def build_martini3_system(
 
     # Render em.mdp / eq.mdp / prod.mdp without requiring gmx on the builder host
     mdp_dir = Path(mods["engine"].MDP_DIR)
-    eq_steps = int(round((cfg.equilibration_ns * 1000.0) / cfg.dt_ps))
-    prod_steps = int(round((cfg.production_ns * 1000.0) / cfg.dt_ps))
-    frame_steps = max(100, int(round(cfg.frame_stride_ps / cfg.dt_ps)))
-    mods["engine"].render_mdp(str(mdp_dir / "em.mdp.in"), str(wdir / "em.mdp"), {"EM_STEPS": cfg.em_steps})
+    nstxout = cfg.compressed_stride
+    nstlog = max(1000, min(cfg.prod_nsteps // 200, 5000))
+    mods["engine"].render_mdp(
+        str(mdp_dir / "em.mdp.in"),
+        str(wdir / "em.mdp"),
+        {"EM_NSTEPS": cfg.em_steps, "EMTOL": 10.0},
+    )
     mods["engine"].render_mdp(
         str(mdp_dir / "eq.mdp.in"),
         str(wdir / "eq.mdp"),
-        {"DT_PS": cfg.dt_ps, "EQ_STEPS": eq_steps, "TEMPERATURE_K": cfg.temperature_k, "SEED": cfg.seed},
+        {
+            "EQ_NSTEPS": cfg.eq_nsteps,
+            "DT_PS": cfg.dt_ps,
+            "TEMPERATURE": cfg.temperature_k,
+            "SEED": cfg.seed,
+            "DEFINE": "define = -DPOSRES",
+            "NSTXOUT_COMPRESSED": max(1000, int(round(1000.0 / cfg.dt_ps))),
+        },
     )
     mods["engine"].render_mdp(
         str(mdp_dir / "prod.mdp.in"),
         str(wdir / "prod.mdp"),
-        {"DT_PS": cfg.dt_ps, "PROD_STEPS": prod_steps, "TEMPERATURE_K": cfg.temperature_k, "XTCOUT_STEPS": frame_steps},
+        {
+            "PROD_NSTEPS": cfg.prod_nsteps,
+            "DT_PS": cfg.dt_ps,
+            "TEMPERATURE": cfg.temperature_k,
+            "NSTXOUT_COMPRESSED": nstxout,
+            "NSTLOG": nstlog,
+        },
     )
 
     # Stage 2: Atomistic 3D structure
@@ -353,9 +369,9 @@ def build_martini3_system(
             "gmx grompp -f em.mdp -c system.gro -p topol.top -n index.ndx -o em.tpr -maxwarn 2",
             "gmx mdrun -deffnm em -nb cpu -ntomp 8",
             "gmx grompp -f eq.mdp -c em.gro -r em.gro -p topol.top -n index.ndx -o eq.tpr -maxwarn 2",
-            "gmx mdrun -deffnm eq -nb gpu -pme cpu -bonded gpu -gpu_id 0",
+            "gmx mdrun -deffnm eq -nb gpu -bonded gpu -gpu_id 0",
             "gmx grompp -f prod.mdp -c eq.gro -t eq.cpt -p topol.top -n index.ndx -o prod.tpr -maxwarn 2",
-            "gmx mdrun -deffnm prod -nb gpu -pme cpu -bonded gpu -gpu_id 0 -pin on",
+            "gmx mdrun -deffnm prod -nb gpu -bonded gpu -gpu_id 0 -pin on",
         ],
     }
 
