@@ -1,0 +1,18 @@
+{
+  "args": {
+    "argv": [
+      "check",
+      "-s",
+      "C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr"
+    ],
+    "timeout_s": 120
+  },
+  "created_at": "2026-10-30T07:07:16+0000",
+  "from": "user",
+  "host": "e2b.local",
+  "id": "20261030T070716-af74",
+  "kind": "gmx",
+  "note": "",
+  "schema": "cgmd.mailbox.request.v1",
+  "timeout_s": 540
+}
