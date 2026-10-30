@@ -1,0 +1,1427 @@
+From 2d277c2a35388c4d70d1bfb15135239193bc3b5b Mon Sep 17 00:00:00 2001
+From: CGMD-Agent <agent@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 02:19:25 +0000
+Subject: [PATCH] mailbox: add a cgmd job kind so coarse-grained runs need no
+ shell
+
+The desk could answer ping/smoke/selfcheck and nothing else: asking for a
+coarse-grained run required allow_shell=true, i.e. arbitrary command execution
+on a workstation that also holds the operator's data.
+
+This adds one narrow capability instead of a shell:
+
+  code/cgmd/desk_ops.py   six fixed modes (probe/search/ff/build/run/all);
+                          the caller passes a JSON document, never a command
+  Invoke-CgmdMailbox.ps1  'cgmd' kind: find a python, run the dispatcher,
+                          publish its result JSON as the job detail
+  core/hub_mailbox.py     advertise the kind to a new session
+
+build writes a backbone-only Martini 3 elastic-network system (one BB bead per
+residue, Q5/Qa/Qd, official W/NA/CL from the force field that ff fetched) with
+EM -> NPT -> production mdp files; run drives native gmx on the GPU and reports
+ns/day plus start/end Rg and contact clusters. Heavy artefacts stay on the
+desk: only the summary JSON travels back.
+
+tests/test_cgmd_desk_ops.py covers the parts that do not need GROMACS.
+---
+ code/cgmd/desk_ops.py                         | 1151 +++++++++++++++++
+ core/hub_mailbox.py                           |    3 +-
+ skills/cgmd-hub/runner/Invoke-CgmdMailbox.ps1 |   71 +
+ tests/test_cgmd_desk_ops.py                   |  117 ++
+ 4 files changed, 1341 insertions(+), 1 deletion(-)
+ create mode 100644 code/cgmd/desk_ops.py
+ create mode 100644 tests/test_cgmd_desk_ops.py
+
+diff --git a/code/cgmd/desk_ops.py b/code/cgmd/desk_ops.py
+new file mode 100644
+index 0000000..0381540
+--- /dev/null
++++ b/code/cgmd/desk_ops.py
+@@ -0,0 +1,1151 @@
++"""Desk-side operations behind the mailbox ``cgmd`` job kind.
++
++Why this file exists
++--------------------
++The desktop answers ``ping`` / ``smoke`` / ``selfcheck`` and stops there: its
++job vocabulary has no way to ask for a *coarse-grained* run.  The alternative
++would be to switch ``allow_shell`` on, i.e. hand any caller an arbitrary
++command line on a machine that also holds the operator's data.  This module
++gives the desk one **narrow** capability instead of a shell: six fixed modes.
++
++    probe    python / gmx / martini inventory, which drives exist
++    search   recent peptide runs on disk (dirs holding .gro + .top/.tpr)
++    ff       install or download the Martini 3 force field, cache it locally
++    build    sequence -> Martini 3 backbone CG system (.gro/.itp/.top/.mdp)
++    run      EM -> NPT equilibration -> production on the GPU, then metrics
++    all      build + run
++
++The caller passes a JSON document (sequence, box, ns, gpu id, roots to
++search); it never passes a command line, so nothing here is a shell.  Every
++number that ends up in the result file is measured on the desk, never assumed.
++
++Model, stated plainly
++---------------------
++``build`` writes a **backbone-only Martini 3 elastic-network model**: one BB
++bead per residue, bead type ``Q5`` (neutral) / ``Qa`` (net negative) / ``Qd``
++(net positive), the residue's net charge written on the bead, harmonic
++backbone bonds (b0 = 0.35 nm, k = 1250 kJ mol-1 nm-2) and an elastic network
++over pairs closer than 0.9 nm (k = 500).  Water is the official Martini 3
++``W`` bead and ions are the official ``NA``/``CL`` beads, both taken from the
++force-field file that ``ff`` fetched -- their parameters are never retyped
++here.  This is *not* the full sidechain mapping that ``martinize2`` produces;
++the report records ``model`` and ``mapping`` so nobody can mistake it for one.
++
++Python 3.6 compatible on purpose: the desk still ships 3.6 in places.
++"""
++
++from __future__ import print_function
++
++import argparse
++import glob
++import io
++import json
++import os
++import platform
++import re
++import shutil
++import subprocess
++import sys
++import tarfile
++import time
++import urllib.request
++
++SCHEMA = "cgmd.desk_ops.v1"
++
++GMX_HINTS = (
++    r"F:\gromacs-2025.1-SM86\gromacs-2025.1-SM86\bin\gmx.exe",
++    r"F:\gromacs-2025.1-SM86\bin\gmx.exe",
++    r"C:\gromacs\bin\gmx.exe",
++)
++
++GMX_GLOBS = (
++    r"F:\gromacs*\*\bin\gmx.exe",
++    r"F:\gromacs*\bin\gmx.exe",
++    r"C:\gromacs*\*\bin\gmx.exe",
++    r"D:\gromacs*\*\bin\gmx.exe",
++    r"E:\gromacs*\*\bin\gmx.exe",
++)
++
++FF_URLS = (
++    "https://codeload.github.com/marrink-lab/martini-forcefields/tar.gz/refs/heads/main",
++    "https://codeload.github.com/marrink-lab/martini-forcefields/tar.gz/refs/heads/master",
++)
++
++AA3 = {
++    "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLN": "Q",
++    "GLU": "E", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",
++    "MET": "M", "PHE": "F", "PRO": "P", "SER": "S", "THR": "T", "TRP": "W",
++    "TYR": "Y", "VAL": "V",
++}
++ONE_LETTER = set("ACDEFGHIKLMNPQRSTVWY")
++CHARGE1 = {"K": 1, "R": 1, "D": -1, "E": -1}
++HYDROPHOBIC = set("AVLIMFWYPC")
++
++#: standard Martini 3 elastic-network constants (documented, not measured)
++BB_BOND_NM = 0.35
++BB_BOND_K = 1250.0
++EN_K = 500.0
++EN_MAX_NM = 0.9
++WATER_SPACING_NM = 0.49
++CLASH_NM = 0.55
++
++
++# ---------------------------------------------------------------------------
++# tiny helpers
++# ---------------------------------------------------------------------------
++def now() -> str:
++    return time.strftime("%Y-%m-%dT%H:%M:%S")
++
++
++def run_cmd(cmd, cwd=None, timeout=600, stdin_text=None, env=None):
++    """Run ``cmd`` (a list) and return a JSON-friendly record."""
++    started = time.time()
++    record = {
++        "command": " ".join(cmd),
++        "returncode": None,
++        "seconds": 0.0,
++        "stdout_tail": [],
++        "stderr_tail": [],
++    }
++    try:
++        proc = subprocess.Popen(
++            cmd,
++            cwd=cwd,
++            stdin=subprocess.PIPE if stdin_text is not None else subprocess.DEVNULL,
++            stdout=subprocess.PIPE,
++            stderr=subprocess.PIPE,
++            universal_newlines=True,
++            env=env,
++        )
++    except OSError as exc:
++        record["returncode"] = 127
++        record["stderr_tail"] = [str(exc)[:400]]
++        record["seconds"] = round(time.time() - started, 2)
++        return record
++    try:
++        out, err = proc.communicate(stdin_text, timeout=timeout)
++    except subprocess.TimeoutExpired:
++        proc.kill()
++        out, err = proc.communicate()
++        record["returncode"] = 124
++        record["stderr_tail"] = ["timeout after {} s".format(timeout)]
++        record["seconds"] = round(time.time() - started, 2)
++        return record
++    record["returncode"] = proc.returncode
++    record["seconds"] = round(time.time() - started, 2)
++    record["stdout_tail"] = [line for line in (out or "").splitlines() if line.strip()][-25:]
++    record["stderr_tail"] = [line for line in (err or "").splitlines() if line.strip()][-25:]
++    return record
++
++
++def read_json(path, default=None):
++    try:
++        with open(path, "r", encoding="utf-8-sig") as handle:
++            return json.load(handle)
++    except Exception:
++        return default
++
++
++def write_json(path, data):
++    folder = os.path.dirname(os.path.abspath(path))
++    if folder and not os.path.isdir(folder):
++        os.makedirs(folder)
++    with open(path, "w", encoding="utf-8") as handle:
++        json.dump(data, handle, ensure_ascii=False, indent=2, sort_keys=True)
++
++
++def tail_lines(path, count=25):
++    try:
++        with open(path, "r", encoding="utf-8", errors="replace") as handle:
++            lines = [line.rstrip() for line in handle if line.strip()]
++        return lines[-count:]
++    except Exception:
++        return []
++
++
++# ---------------------------------------------------------------------------
++# discovery
++# ---------------------------------------------------------------------------
++def find_gmx(explicit=None, deep=True):
++    """Locate a GROMACS driver.  Returns ``(path, how)``."""
++    if explicit and os.path.isfile(explicit):
++        return explicit, "args"
++    env = os.environ.get("CGMD_GMX")
++    if env and os.path.isfile(env):
++        return env, "CGMD_GMX"
++    for name in ("gmx.exe", "gmx", "gmx_mpi.exe", "gmx_mpi"):
++        found = shutil.which(name)
++        if found:
++            return found, "PATH"
++    for candidate in GMX_HINTS:
++        if os.path.isfile(candidate):
++            return candidate, "hint"
++    if deep:
++        for pattern in GMX_GLOBS:
++            for candidate in sorted(glob.glob(pattern)):
++                return candidate, "glob"
++    return None, "missing"
++
++
++def python_version(exe, extra_args=None):
++    args = [exe] + list(extra_args or []) + [
++        "-c",
++        "import sys;print('%d.%d.%d' % sys.version_info[:3])",
++    ]
++    record = run_cmd(args, timeout=60)
++    if record["returncode"] != 0 or not record["stdout_tail"]:
++        return None
++    return record["stdout_tail"][-1].strip()
++
++
++def find_pythons():
++    """Every interpreter this box has, newest first (duplicates removed)."""
++    candidates = []
++    seen = set()
++
++    def add(exe, how, extra=None):
++        key = (os.path.abspath(exe).lower() if os.path.isfile(exe) else exe).lower()
++        key = key + "|" + " ".join(extra or [])
++        if key in seen:
++            return
++        seen.add(key)
++        version = python_version(exe, extra)
++        if not version:
++            return
++        entry = {"exe": exe, "args": list(extra or []), "version": version, "how": how}
++        entry["pip"] = bool(run_cmd([exe] + list(extra or []) + ["-m", "pip", "--version"], timeout=90)["returncode"] == 0)
++        candidates.append(entry)
++
++    add(sys.executable, "running")
++    for name in ("python.exe", "python", "python3.exe", "python3"):
++        found = shutil.which(name)
++        if found:
++            add(found, "PATH")
++    for prefix in ("py",):
++        found = shutil.which(prefix + ".exe") or shutil.which(prefix)
++        if found:
++            add(found, "py-launcher", ["-3"])
++    for pattern in (
++        os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Python", "Python*", "python.exe"),
++        os.path.join(os.environ.get("ProgramFiles", ""), "Python*", "python.exe"),
++        r"C:\Python3*\python.exe",
++        r"C:\ProgramData\Anaconda3\python.exe",
++        r"C:\ProgramData\miniconda3\python.exe",
++        os.path.join(os.environ.get("USERPROFILE", ""), "anaconda3", "python.exe"),
++        os.path.join(os.environ.get("USERPROFILE", ""), "miniconda3", "python.exe"),
++    ):
++        if not re.match(r"^[A-Za-z]:[\\/]", pattern or ""):
++            continue
++        for candidate in sorted(glob.glob(pattern), reverse=True):
++            add(candidate, "glob")
++
++    def sort_key(item):
++        parts = [int(piece) for piece in item["version"].split(".") if piece.isdigit()]
++        return parts + [1 if item["pip"] else 0]
++
++    candidates.sort(key=sort_key, reverse=True)
++    return candidates
++
++
++def ff_files(root, limit=4000):
++    """Every ``martini*v3*.itp`` under ``root`` (bounded walk)."""
++    hits = []
++    if not root or not os.path.isdir(root):
++        return hits
++    root = os.path.abspath(root)
++    seen = 0
++    for folder, dirs, files in os.walk(root):
++        seen += 1
++        if seen > limit:
++            break
++        if os.path.basename(folder).lower() in ("node_modules", ".git", "state", "logs"):
++            dirs[:] = []
++            continue
++        for name in files:
++            lowered = name.lower()
++            if lowered.endswith(".itp") and "martini" in lowered and ("v3" in lowered or "3.0" in lowered):
++                hits.append(os.path.join(folder, name))
++    return hits
++
++
++def find_ff(explicit=None):
++    """Locate a Martini 3 force-field directory.  Returns ``(dir, file, how)``."""
++    roots = []
++    if explicit:
++        roots.append((explicit, "args"))
++    env = os.environ.get("CGMD_MARTINI3_DIR")
++    if env:
++        roots.append((env, "CGMD_MARTINI3_DIR"))
++    local = read_json(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
++        os.path.abspath(__file__)))), "skills", "cgmd-hub", "config", "cgmd_hub.local.json"), {}) or {}
++    for key in ("martini3_dir", "martini_dir", "forcefield_dir"):
++        value = local.get(key)
++        if isinstance(value, str) and value:
++            roots.append((value, "local-config"))
++    roots.append((os.path.join(os.environ.get("USERPROFILE", os.path.expanduser("~")), "cgmd-runs", "martini3"), "cache"))
++    for pattern in (
++        os.path.join(sys.prefix, "Lib", "site-packages", "martini_forcefields"),
++        os.path.join(sys.prefix, "lib", "python*", "site-packages", "martini_forcefields"),
++        os.path.join(sys.prefix, "lib", "python*", "dist-packages", "martini_forcefields"),
++    ):
++        for hit in glob.glob(pattern):
++            roots.append((hit, "site-packages"))
++
++    for root, how in roots:
++        for hit in ff_files(root):
++            return os.path.dirname(hit), hit, how
++    return None, None, "missing"
++
++
++def moleculetypes_in(path):
++    """Names declared in ``[ moleculetype ]`` blocks of one itp file."""
++    names = []
++    try:
++        with open(path, "r", encoding="utf-8", errors="replace") as handle:
++            lines = handle.read().splitlines()
++    except Exception:
++        return names
++    inside = False
++    for line in lines:
++        stripped = line.split(";")[0].strip()
++        if not stripped:
++            continue
++        if stripped.startswith("["):
++            inside = stripped.replace("[", "").replace("]", "").strip().lower() == "moleculetype"
++            continue
++        if inside and not stripped.startswith("#"):
++            names.append(stripped.split()[0])
++            inside = False
++    return names
++
++
++def file_has_section(path, section):
++    try:
++        with open(path, "r", encoding="utf-8", errors="replace") as handle:
++            text = handle.read().lower()
++    except Exception:
++        return False
++    return "[ " + section + " ]" in text or "[" + section + "]" in text
++
++
++def ff_bundle(ff_file, needed=("W", "NA", "CL")):
++    """Files that together define the molecules this model uses.
++
++    Martini 3 ships water and ions either inside the main file or in siblings;
++    asking each file what it defines beats guessing a filename.  The base file
++    that carries ``[ atomtypes ]`` always comes first, and every file is
++    included once.
++    """
++    folder = os.path.dirname(ff_file)
++    files = [os.path.abspath(ff_file)]
++    for pattern in ("*.itp", os.path.join("*", "*.itp")):
++        for candidate in sorted(glob.glob(os.path.join(folder, pattern))):
++            absolute = os.path.abspath(candidate)
++            if absolute not in files:
++                files.append(absolute)
++    available = {}
++    base = None
++    for path in files:
++        for name in moleculetypes_in(path):
++            available.setdefault(name, path)
++        if base is None and file_has_section(path, "atomtypes"):
++            base = path
++    includes = []
++    if base:
++        includes.append(base)
++    for name in needed:
++        path = available.get(name)
++        if path and path not in includes:
++            includes.append(path)
++    return includes, sorted(available)
++
++
++# ---------------------------------------------------------------------------
++# mode: probe
++# ---------------------------------------------------------------------------
++def mode_probe(args, note):
++    gmx, gmx_how = find_gmx(args.get("gmx"))
++    pythons = find_pythons()
++    ff_dir, ff_file, ff_how = find_ff(args.get("martini_dir"))
++    detail = {
++        "host": platform.node(),
++        "platform": platform.platform(),
++        "cwd": os.getcwd(),
++        "drives": [letter + ":\\" for letter in "CDEFGH" if os.path.isdir(letter + ":\\")],
++        "gmx": {"path": gmx, "how": gmx_how},
++        "pythons": pythons,
++        "martini": {"dir": ff_dir, "file": ff_file, "how": ff_how},
++        "ff_molecules": moleculetypes_in(ff_file) if ff_file else [],
++    }
++    if gmx:
++        version = run_cmd([gmx, "--version"], timeout=120)
++        text = "\n".join(version["stdout_tail"] + version["stderr_tail"])
++        match = re.search(r"GROMACS version:\s*(\S+)", text)
++        gpu = re.search(r"GPU support:\s*(.+?)\s*$", text, re.MULTILINE)
++        accel = re.search(r"CUDA runtime:\s*(.+?)\s*$", text, re.MULTILINE)
++        detail["gmx"]["version"] = match.group(1) if match else None
++        detail["gmx"]["gpu_support"] = gpu.group(1) if gpu else None
++        detail["gmx"]["cuda_runtime"] = accel.group(1) if accel else None
++    for root in args.get("roots") or []:
++        detail.setdefault("roots_checked", []).append({"root": root, "exists": os.path.isdir(root)})
++    best = pythons[0] if pythons else None
++    status = "ok" if (gmx and best) else "fail"
++    summary = "gmx {0} | python {1} | martini3 {2}".format(
++        detail["gmx"].get("version") or "missing",
++        best["version"] if best else "missing",
++        "found" if ff_file else "missing",
++    )
++    return status, summary, detail
++
++
++# ---------------------------------------------------------------------------
++# mode: search
++# ---------------------------------------------------------------------------
++def sequence_from_gro(path):
++    """Guess a peptide sequence from the residue names of a ``.gro`` file."""
++    try:
++        with open(path, "r", encoding="utf-8", errors="replace") as handle:
++            lines = handle.read().splitlines()
++    except Exception:
++        return None
++    if len(lines) < 3:
++        return None
++    letters = []
++    last_residue = None
++    for line in lines[2:]:
++        if len(line) < 10:
++            continue
++        residue_number = line[0:5].strip()
++        resname = line[5:10].strip().upper()
++        atomname = line[10:15].strip().upper()
++        if resname in AA3:
++            letter = AA3[resname]
++        elif len(resname) == 1 and resname in ONE_LETTER and atomname == "BB":
++            # a backbone-only CG file names the bead after the residue, so the
++            # atom name is what tells a Trp bead apart from a water bead
++            letter = resname
++        else:
++            # solvent and ions come after the peptide in every file we write:
++            # the first non-amino residue ends the chain.
++            if letters:
++                break
++            continue
++        # one letter per residue, whether the file holds one bead or 20 atoms
++        if residue_number and residue_number == last_residue:
++            continue
++        last_residue = residue_number
++        letters.append(letter)
++    if 3 <= len(letters) <= 120:
++        return "".join(letters)
++    return None
++
++
++def mode_search(args, note):
++    roots = args.get("roots") or []
++    days = float(args.get("days") or 120)
++    limit = int(args.get("limit") or 12)
++    max_dirs = int(args.get("max_dirs") or 6000)
++    depth_max = int(args.get("depth") or 4)
++    cutoff = time.time() - days * 86400
++    candidates = []
++    visited = 0
++    truncated = False
++    for root in roots:
++        if not os.path.isdir(root):
++            continue
++        base_depth = root.rstrip("\\/").count(os.sep)
++        for folder, dirs, files in os.walk(root):
++            visited += 1
++            if visited > max_dirs:
++                truncated = True
++                break
++            if folder.count(os.sep) - base_depth >= depth_max:
++                dirs[:] = []
++            dirs[:] = [d for d in dirs if d.lower() not in
++                       ("node_modules", ".git", "windows", "appdata", "$recycle.bin", "system volume information")]
++            lowered = set(name.lower() for name in files)
++            gro = [name for name in files if name.lower().endswith(".gro")]
++            topo = [name for name in files if name.lower().endswith((".top", ".tpr", ".itp"))]
++            if not gro and not topo:
++                continue
++            newest = 0.0
++            for name in files:
++                try:
++                    stamp = os.path.getmtime(os.path.join(folder, name))
++                except OSError:
++                    continue
++                newest = max(newest, stamp)
++            if newest < cutoff:
++                continue
++            entry = {
++                "dir": folder,
++                "newest": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(newest)),
++                "age_days": round((time.time() - newest) / 86400.0, 1),
++                "gro": gro[:6],
++                "topology": topo[:6],
++                "files": len(files),
++            }
++            gro_path = os.path.join(folder, gro[0]) if gro else None
++            if gro_path and "min" not in os.path.basename(gro_path).lower():
++                entry["sequence"] = sequence_from_gro(gro_path)
++            candidates.append(entry)
++        if truncated:
++            break
++    candidates.sort(key=lambda item: item["newest"], reverse=True)
++    picked = candidates[:limit]
++    detail = {
++        "roots": roots,
++        "dirs_visited": visited,
++        "walk_truncated": truncated,
++        "cutoff_days_back": days,
++        "candidates": picked,
++        "with_sequence": [item for item in picked if item.get("sequence")],
++    }
++    if picked:
++        top = picked[0]
++        summary = "{0} candidate run(s); newest {1} ({2} d ago){3}".format(
++            len(candidates),
++            top["dir"],
++            top["age_days"],
++            " | sequence " + top["sequence"] if top.get("sequence") else "",
++        )
++        return "ok", summary, detail
++    return "warn", "no run directory found under {0} (last {1} d)".format(", ".join(roots) or "(none)", days), detail
++
++
++# ---------------------------------------------------------------------------
++# mode: ff
++# ---------------------------------------------------------------------------
++def mode_ff(args, note):
++    target = args.get("target") or os.path.join(
++        os.environ.get("USERPROFILE", os.path.expanduser("~")), "cgmd-runs", "martini3")
++    detail = {"target": target, "steps": []}
++    ff_dir, ff_file, how = find_ff(args.get("martini_dir"))
++    if ff_file:
++        detail["found"] = {"dir": ff_dir, "file": ff_file, "how": how}
++        detail["molecules"] = moleculetypes_in(ff_file)
++        return "ok", "martini 3 already present: " + os.path.basename(ff_file), detail
++
++    python = args.get("python")
++    if python:
++        command = [python] + list(args.get("python_args") or []) + [
++            "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "martini-forcefields"]
++        record = run_cmd(command, timeout=int(args.get("install_timeout") or 600))
++        detail["steps"].append({"step": "pip", "record": record})
++        ff_dir, ff_file, how = find_ff(args.get("martini_dir"))
++        if ff_file:
++            detail["found"] = {"dir": ff_dir, "file": ff_file, "how": how}
++            detail["molecules"] = moleculetypes_in(ff_file)
++            return "ok", "martini 3 installed via pip: " + os.path.basename(ff_file), detail
++
++    if not os.path.isdir(target):
++        os.makedirs(target)
++    last_error = None
++    for url in FF_URLS:
++        record = {"step": "download", "url": url, "returncode": None}
++        try:
++            request = urllib.request.Request(url, headers={"User-Agent": "cgmd-desk-ops"})
++            raw = urllib.request.urlopen(request, timeout=120).read()
++            record["bytes"] = len(raw)
++            archive = tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz")
++            archive.extractall(target)
++            record["returncode"] = 0
++        except Exception as exc:  # noqa: BLE001 - reported, never raised
++            record["returncode"] = 1
++            record["error"] = str(exc)[:300]
++            last_error = record["error"]
++            detail["steps"].append(record)
++            continue
++        detail["steps"].append(record)
++        ff_dir, ff_file, how = find_ff(target)
++        if ff_file:
++            detail["found"] = {"dir": ff_dir, "file": ff_file, "how": "download"}
++            detail["molecules"] = moleculetypes_in(ff_file)
++            return "ok", "martini 3 downloaded: " + os.path.basename(ff_file), detail
++    detail["error"] = last_error
++    return "fail", "martini 3 force field not available (pip and download both failed)", detail
++
++
++# ---------------------------------------------------------------------------
++# mode: build
++# ---------------------------------------------------------------------------
++def peptide_charges(sequence):
++    """Net charge per backbone bead: sidechain charge plus the two termini."""
++    charges = []
++    for index, residue in enumerate(sequence):
++        charge = float(CHARGE1.get(residue, 0))
++        if index == 0:
++            charge += 1.0
++        if index == len(sequence) - 1:
++            charge -= 1.0
++        charges.append(charge)
++    return charges
++
++
++def bead_type(charge):
++    if charge > 0:
++        return "Qd"
++    if charge < 0:
++        return "Qa"
++    return "Q5"
++
++
++def write_gro(path, title, beads, box):
++    """``beads`` is a list of ``(resname, atomname, xyz_nm)``."""
++    lines = [title[:80], "{:d}".format(len(beads))]
++    for index, (resname, atomname, xyz) in enumerate(beads, start=1):
++        lines.append("{:>5d}{:<5s}{:>5s}{:>5d}{:>8.3f}{:>8.3f}{:>8.3f}".format(
++            index % 100000, resname[:5], atomname[:5], index % 100000,
++            xyz[0], xyz[1], xyz[2]))
++    lines.append("{:>10.5f}{:>10.5f}{:>10.5f}".format(box, box, box))
++    with open(path, "w", encoding="ascii", newline="\n") as handle:
++        handle.write("\n".join(lines) + "\n")
++    return len(beads)
++
++
++def build_system(sequence, workdir, ff_file, box_nm=None, salt_m=0.15, temperature=310.0,
++                 includes=None):
++    """Write a backbone-only Martini 3 system.  Returns the file inventory."""
++    if not os.path.isdir(workdir):
++        os.makedirs(workdir)
++    count = len(sequence)
++    box_nm = float(box_nm) if box_nm else max(5.0, round(2.2 + 0.45 * count, 1))
++    charges = peptide_charges(sequence)
++
++    # --- backbone coordinates: an extended, slightly zig-zagged chain
++    positions = []
++    for index in range(count):
++        positions.append((BB_BOND_NM * index + 0.9, 0.9 + (0.12 if index % 2 else -0.12), 0.9))
++    centre = (box_nm / 2.0, box_nm / 2.0, box_nm / 2.0)
++    span = BB_BOND_NM * (count - 1)
++    shift = (centre[0] - 0.9 - span / 2.0, centre[1] - 0.9, centre[2] - 0.9)
++    peptide = []
++    for index, residue in enumerate(sequence):
++        xyz = (positions[index][0] + shift[0], positions[index][1] + shift[1], positions[index][2] + shift[2])
++        peptide.append((residue, "BB", xyz))
++
++    # --- water on a Martini 3 grid, minus the peptide's own volume
++    step = box_nm / max(2, int(round(box_nm / WATER_SPACING_NM)))
++    grid = []
++    index_axis = 0
++    while index_axis < int(round(box_nm / step)):
++        j = 0
++        while j < int(round(box_nm / step)):
++            k = 0
++            while k < int(round(box_nm / step)):
++                grid.append(((index_axis + 0.5) * step, (j + 0.5) * step, (k + 0.5) * step))
++                k += 1
++            j += 1
++        index_axis += 1
++    peptide_xyz = [item[2] for item in peptide]
++    waters = []
++    for point in grid:
++        keep = True
++        for other in peptide_xyz:
++            if ((point[0] - other[0]) ** 2 + (point[1] - other[1]) ** 2 + (point[2] - other[2]) ** 2) < CLASH_NM ** 2:
++                keep = False
++                break
++        if keep:
++            waters.append(point)
++
++    # --- 0.15 M salt, neutralised against the peptide's net charge
++    volume_l = (box_nm * 1e-9) ** 3 * 1000.0
++    pairs = int(round(salt_m * 6.02214076e23 * volume_l))
++    net = int(round(sum(charges)))
++    sodium = pairs + max(0, -net)
++    chloride = pairs + max(0, net)
++    sodium = min(sodium, len(waters) // 4)
++    chloride = min(chloride, len(waters) // 4)
++    ions = []
++    cursor = 0
++    for _ in range(sodium):
++        ions.append(("NA", "NA", waters[cursor]))
++        cursor += 1
++    for _ in range(chloride):
++        ions.append(("CL", "CL", waters[cursor]))
++        cursor += 1
++    waters = waters[cursor:]
++
++    coord_path = os.path.join(workdir, "system.gro")
++    beads = peptide + [("W", "W", point) for point in waters] + ions
++    write_gro(coord_path, "CGMD Martini 3 backbone-only {} ({} beads)".format(sequence, len(beads)), beads, box_nm)
++
++    # --- the peptide topology: bonds + elastic network
++    itp_lines = [
++        "; CGMD desk_ops.py -- backbone-only Martini 3 peptide",
++        "; sequence {}  ({} residues)".format(sequence, count),
++        "; mapping: one BB bead per residue, bead type Q5/Qa/Qd, charge on the bead",
++        "; backbone bond b0 = {} nm, k = {} ; elastic network k = {}, cutoff {} nm".format(
++            BB_BOND_NM, BB_BOND_K, EN_K, EN_MAX_NM),
++        "",
++        "[ moleculetype ]",
++        "; molname  nrexcl",
++        "Peptide 1",
++        "",
++        "[ atoms ]",
++        ";  nr  type  resnr  residue  atom  cgnr  charge  mass",
++    ]
++    for index, residue in enumerate(sequence, start=1):
++        itp_lines.append("{:5d} {:>4s} {:5d} {:>5s} {:>4s} {:5d} {:8.3f} {:8.2f}".format(
++            index, bead_type(charges[index - 1]), index, residue, "BB", index,
++            charges[index - 1], 72.0))
++    itp_lines += ["", "[ bonds ]", ";  ai  aj  funct  b0(nm)  kb(kJ/mol/nm2)"]
++    for index in range(1, count):
++        itp_lines.append("{:5d} {:5d} {:5d} {:8.3f} {:8.1f}".format(index, index + 1, 1, BB_BOND_NM, BB_BOND_K))
++    elastic = []
++    for i in range(count):
++        for j in range(i + 1, count):
++            distance = ((peptide_xyz[i][0] - peptide_xyz[j][0]) ** 2 +
++                        (peptide_xyz[i][1] - peptide_xyz[j][1]) ** 2 +
++                        (peptide_xyz[i][2] - peptide_xyz[j][2]) ** 2) ** 0.5
++            if distance <= EN_MAX_NM and (j - i) >= 2:
++                elastic.append((i + 1, j + 1, round(distance, 3)))
++    if elastic:
++        itp_lines += ["", "[ bonds ]", "; elastic network (|i-j| >= 2, r <= {} nm, k = {})".format(EN_MAX_NM, EN_K)]
++        for atom_i, atom_j, distance in elastic:
++            itp_lines.append("{:5d} {:5d} {:5d} {:8.3f} {:8.1f}".format(atom_i, atom_j, 1, distance, EN_K))
++    itp_lines += ["", "[ system ]", "CGMD backbone CG {}".format(sequence), "",
++                  "[ molecules ]", "Peptide 1", ""]
++    itp_path = os.path.join(workdir, "peptide.itp")
++    with open(itp_path, "w", encoding="ascii", newline="\n") as handle:
++        handle.write("\n".join(itp_lines))
++
++    top_lines = ["; CGMD desk_ops.py -- self-contained topology"]
++    for path in (includes or [ff_file]):
++        top_lines.append("#include \"{}\"".format(path.replace("\\", "/")))
++    top_lines += [
++        "#include \"peptide.itp\"",
++        "",
++        "[ system ]",
++        "CGMD backbone CG {} with Martini 3 water".format(sequence),
++        "",
++        "[ molecules ]",
++        "Peptide 1",
++        "W {}".format(len(waters)),
++    ]
++    if sodium:
++        top_lines.append("NA {}".format(sodium))
++    if chloride:
++        top_lines.append("CL {}".format(chloride))
++    top_path = os.path.join(workdir, "topol.top")
++    with open(top_path, "w", encoding="ascii", newline="\n") as handle:
++        handle.write("\n".join(top_lines) + "\n")
++
++    write_mdp_files(workdir, temperature=temperature)
++    return {
++        "sequence": sequence,
++        "residues": count,
++        "box_nm": box_nm,
++        "water_beads": len(waters),
++        "na": sodium,
++        "cl": chloride,
++        "beads_total": len(beads),
++        "peptide_charge": round(sum(charges), 2),
++        "elastic_bonds": len(elastic),
++        "gro": coord_path,
++        "top": top_path,
++        "itp": itp_path,
++        "model": "martini3-backbone-only+elastic-network",
++        "mapping": "1 BB bead / residue, Q5(neutral) Qa(neg) Qd(pos), charge on bead",
++        "ff_file": ff_file,
++    }
++
++
++def write_mdp_files(workdir, temperature=310.0):
++    common = [
++        "cutoff-scheme = Verlet",
++        "nstlist = 20",
++        "pbc = xyz",
++        "coulombtype = reaction-field",
++        "coulomb-modifier = Potential-shift",
++        "epsilon_r = 15",
++        "epsilon_rf = 0",
++        "vdw-type = cutoff",
++        "vdw-modifier = Potential-shift",
++        "rlist = 1.1",
++        "rcoulomb = 1.1",
++        "rvdw = 1.1",
++        "dispcorr = no",
++    ]
++    em = [
++        "; CGMD desk_ops.py -- energy minimisation",
++        "integrator = steep",
++        "emtol = 200.0",
++        "emstep = 0.005",
++        "nsteps = 5000",
++    ] + common
++    eq = [
++        "; CGMD desk_ops.py -- NPT equilibration",
++        "integrator = md",
++        "dt = 0.02",
++        "nsteps = 10000",
++        "nstcomm = 100",
++        "nstlog = 500",
++        "nstenergy = 500",
++        "nstxout-compressed = 5000",
++        "tcoupl = v-rescale",
++        "tc-grps = System",
++        "tau-t = 1.0",
++        "ref-t = {}".format(temperature),
++        "pcoupl = c-rescale",
++        "pcoupltype = isotropic",
++        "tau-p = 4.0",
++        "ref-p = 1.0",
++        "compressibility = 3e-4",
++        "gen-vel = yes",
++        "gen-temp = {}".format(temperature),
++        "gen-seed = -1",
++        "constraints = none",
++    ] + common
++    prod = [
++        "; CGMD desk_ops.py -- production",
++        "integrator = md",
++        "dt = 0.02",
++        "nsteps = 50000",
++        "nstcomm = 100",
++        "nstlog = 1000",
++        "nstenergy = 1000",
++        "nstxout-compressed = 5000",
++        "tcoupl = v-rescale",
++        "tc-grps = System",
++        "tau-t = 1.0",
++        "ref-t = {}".format(temperature),
++        "pcoupl = c-rescale",
++        "pcoupltype = isotropic",
++        "tau-p = 4.0",
++        "ref-p = 1.0",
++        "compressibility = 3e-4",
++        "gen-vel = yes",
++        "gen-temp = {}".format(temperature),
++        "gen-seed = -1",
++        "constraints = none",
++    ] + common
++    for name, lines in (("em.mdp", em), ("eq.mdp", eq), ("prod.mdp", prod)):
++        with open(os.path.join(workdir, name), "w", encoding="ascii", newline="\n") as handle:
++            handle.write("\n".join(lines) + "\n")
++
++
++def mode_build(args, note):
++    sequence = (args.get("sequence") or "").strip().upper()
++    if not sequence:
++        return "unsupported", "build needs args.sequence", {}
++    bad = [residue for residue in sequence if residue not in AA3.values()]
++    if bad:
++        return "unsupported", "sequence has non-standard residues: " + "".join(sorted(set(bad))), {}
++    ff_dir, ff_file, how = find_ff(args.get("martini_dir"))
++    if not ff_file:
++        return "fail", "martini 3 force field missing - run mode=ff first", {"sequence": sequence}
++    includes, molecules = ff_bundle(ff_file)
++    missing = [name for name in ("W",) if name not in molecules]
++    if missing:
++        return "fail", "force field lacks {} - wrong file: {}".format(",".join(missing), ff_file), {
++            "ff_file": ff_file, "molecules": molecules}
++    workdir = args.get("workdir") or os.path.join(
++        os.environ.get("USERPROFILE", os.path.expanduser("~")), "cgmd-runs", "cg-" + time.strftime("%Y%m%d-%H%M%S"))
++    system = build_system(sequence, workdir, ff_file, box_nm=args.get("box_nm"),
++                          salt_m=float(args.get("salt_m") or 0.15),
++                          temperature=float(args.get("temperature") or 310.0),
++                          includes=includes)
++    system["ff_how"] = how
++    system["ff_molecules"] = molecules
++    system["ff_includes"] = includes
++    summary = "{} -> {} beads in {:.1f} nm box ({} W, {} NA, {} CL)".format(
++        sequence, system["beads_total"], system["box_nm"], system["water_beads"], system["na"], system["cl"])
++    return "ok", summary, system
++
++
++# ---------------------------------------------------------------------------
++# mode: run
++# ---------------------------------------------------------------------------
++def parse_mdrun_log(path):
++    """Pull the numbers a reviewer asks for out of mdrun's log."""
++    report = {"performance_ns_per_day": None, "steps": None, "finished": False,
++              "max_force": None, "warnings": []}
++    try:
++        with open(path, "r", encoding="utf-8", errors="replace") as handle:
++            text = handle.read()
++    except Exception:
++        return report
++    for line in text.splitlines():
++        stripped = line.strip()
++        if "Performance:" in stripped:
++            parts = stripped.split()
++            try:
++                report["performance_ns_per_day"] = float(parts[1])
++            except (IndexError, ValueError):
++                pass
++        if "Finished mdrun" in stripped or "Writing final coordinates" in stripped:
++            report["finished"] = True
++        match = re.search(r"^\s*Step\s+Time", text)
++        if match:
++            report["steps"] = report["steps"] or True
++        if "Fatal error" in stripped or "LINCS WARNING" in stripped:
++            report["warnings"].append(stripped[:200])
++        match = re.search(r"Maximum force\s*=\s*([-+0-9.eE]+)", stripped)
++        if match:
++            try:
++                report["max_force"] = float(match.group(1))
++            except ValueError:
++                pass
++    return report
++
++
++def read_gro(path):
++    """Return ``(beads, box)`` where beads is a list of (resname, atomname, xyz)."""
++    beads = []
++    box = 0.0
++    with open(path, "r", encoding="utf-8", errors="replace") as handle:
++        lines = handle.read().splitlines()
++    if len(lines) < 3:
++        return beads, box
++    count = int(lines[1].strip())
++    for line in lines[2:2 + count]:
++        if len(line) < 30:
++            continue
++        resname = line[5:10].strip()
++        atomname = line[10:15].strip()
++        try:
++            xyz = (float(line[20:28]), float(line[28:36]), float(line[36:44]))
++        except ValueError:
++            continue
++        beads.append((resname, atomname, xyz))
++    try:
++        box = float(lines[2 + count].split()[0])
++    except (IndexError, ValueError):
++        box = 0.0
++    return beads, box
++
++
++def radius_of_gyration(points):
++    if not points:
++        return 0.0
++    centre = [sum(point[axis] for point in points) / float(len(points)) for axis in range(3)]
++    total = sum((point[0] - centre[0]) ** 2 + (point[1] - centre[1]) ** 2 + (point[2] - centre[2]) ** 2
++                for point in points)
++    return round((total / float(len(points))) ** 0.5, 3)
++
++
++def contact_clusters(points, cutoff=0.55, minimum=2):
++    """Largest connected cluster under the heavy-contact criterion (nm)."""
++    count = len(points)
++    parent = list(range(count))
++
++    def find(item):
++        while parent[item] != item:
++            parent[item] = parent[parent[item]]
++            item = parent[item]
++        return item
++
++    cutoff2 = cutoff * cutoff
++    for i in range(count):
++        for j in range(i + 1, count):
++            dx = points[i][0] - points[j][0]
++            dy = points[i][1] - points[j][1]
++            dz = points[i][2] - points[j][2]
++            if (dx * dx + dy * dy + dz * dz) < cutoff2:
++                root_i, root_j = find(i), find(j)
++                if root_i != root_j:
++                    parent[root_i] = root_j
++    groups = {}
++    for index in range(count):
++        groups.setdefault(find(index), []).append(index)
++    sizes = sorted((len(members) for members in groups.values()), reverse=True)
++    if not sizes:
++        return {"largest": 0, "clusters": []}
++    return {"largest": sizes[0], "clusters": sizes[:8],
++            "contacts": sum(1 for size in sizes if size >= minimum)}
++
++
++def mode_run(args, note):
++    workdir = args.get("workdir")
++    if not workdir or not os.path.isdir(workdir):
++        return "unsupported", "run needs args.workdir from a finished build", {}
++    ff_dir, ff_file, ff_how = find_ff(args.get("martini_dir"))
++    gmx, gmx_how = find_gmx(args.get("gmx"))
++    if not gmx:
++        return "fail", "gmx.exe not found on this workstation", {"workdir": workdir}
++    production_ns = float(args.get("ns") or 1.0)
++    gpu_id = str(args.get("gpu_id") or 0)
++    use_gpu = bool(args.get("gpu", True))
++    steps = int(round(production_ns * 1000.0 / 0.02))
++
++    prod_mdp = os.path.join(workdir, "prod.mdp")
++    if os.path.isfile(prod_mdp):
++        with open(prod_mdp, "r", encoding="utf-8") as handle:
++            text = handle.read()
++        text = re.sub(r"^nsteps\s*=\s*\d+", "nsteps = {}".format(steps), text, flags=re.MULTILINE)
++        with open(prod_mdp, "w", encoding="utf-8", newline="\n") as handle:
++            handle.write(text)
++
++    stages = []
++    gmx_args = ["-nb", "gpu", "-pme", "cpu", "-ntmpi", "1", "-ntomp", str(args.get("omp") or 4),
++                "-gpu_id", gpu_id] if use_gpu else ["-ntmpi", "1", "-ntomp", str(args.get("omp") or 4)]
++
++    env = dict(os.environ)
++    if ff_dir:
++        env["GMXLIB"] = ff_dir
++
++    def stage(name, argv, timeout, stdin_text=None, use_env=True):
++        record = run_cmd([gmx] + argv, cwd=workdir, timeout=timeout, stdin_text=stdin_text,
++                         env=env if use_env else None)
++        entry = {"stage": name, "argv": argv, "returncode": record["returncode"],
++                 "seconds": record["seconds"],
++                 "output_tail": record["stdout_tail"][-12:], "error_tail": record["stderr_tail"][-12:]}
++        stages.append(entry)
++        return entry
++
++    top = os.path.join(workdir, "topol.top")
++    for label, mdp, coord, deffnm in (
++        ("grompp-em", "em.mdp", "system.gro", "em"),
++        ("grompp-eq", "eq.mdp", "em.gro", "eq"),
++        ("grompp-prod", "prod.mdp", "eq.gro", "prod"),
++    ):
++        entry = stage(label, ["grompp", "-f", mdp, "-c", coord, "-p", top, "-o", deffnm + ".tpr",
++                              "-maxwarn", "4"], timeout=300)
++        if entry["returncode"] != 0:
++            return "fail", "{} failed (exit {})".format(label, entry["returncode"]), {
++                "workdir": workdir, "stages": stages, "gmx": gmx}
++
++    entry = stage("mdrun-em", ["mdrun", "-deffnm", "em"] + (gmx_args if use_gpu else []), timeout=600)
++    if entry["returncode"] != 0:
++        return "fail", "mdrun-em failed (exit {})".format(entry["returncode"]), {
++            "workdir": workdir, "stages": stages}
++    entry = stage("mdrun-eq", ["mdrun", "-deffnm", "eq"] + gmx_args,
++                  timeout=int(args.get("eq_timeout") or 1200))
++    if entry["returncode"] != 0:
++        return "fail", "mdrun-eq failed (exit {})".format(entry["returncode"]), {
++            "workdir": workdir, "stages": stages}
++    budget = int(args.get("prod_timeout") or 2400)
++    entry = stage("mdrun-prod-gpu", ["mdrun", "-deffnm", "prod"] + gmx_args, timeout=budget)
++    if entry["returncode"] != 0:
++        return "fail", "mdrun-prod failed (exit {})".format(entry["returncode"]), {
++            "workdir": workdir, "stages": stages}
++
++    log_path = os.path.join(workdir, "prod.log")
++    report = parse_mdrun_log(log_path)
++    report["ps_completed"] = round(production_ns * 1000.0, 1)
++    report["steps_requested"] = steps
++    report["accelerator"] = "gpu" if use_gpu else "cpu"
++    report["gmx"] = gmx
++    report["gmx_how"] = gmx_how
++
++    structure = {}
++    for label, path_name in (("start", "eq.gro"), ("final", "prod.gro")):
++        path = os.path.join(workdir, path_name)
++        if not os.path.isfile(path):
++            continue
++        beads, box = read_gro(path)
++        peptide = [point[2] for point in beads if point[1] == "BB"]
++        structure[label] = {
++            "beads_total": len(beads),
++            "box_nm": round(box, 3),
++            "peptide_beads": len(peptide),
++            "rg_nm": radius_of_gyration(peptide),
++            "clusters": contact_clusters(peptide),
++        }
++    report["structure"] = structure
++    report["stages_seconds"] = round(sum(entry["seconds"] for entry in stages), 2)
++    report["workdir"] = workdir
++    ok = bool(report.get("finished")) and (report.get("performance_ns_per_day") or 0) > 0
++    status = "ok" if ok else "warn"
++    summary = "{} ps CG on {} at {} ns/day".format(
++        report["ps_completed"], report["accelerator"], report.get("performance_ns_per_day"))
++    return status, summary, {"report": report, "stages": stages, "workdir": workdir}
++
++
++# ---------------------------------------------------------------------------
++# entry point
++# ---------------------------------------------------------------------------
++MODES = ("probe", "search", "ff", "build", "run", "all")
++
++
++def run_all(args, note):
++    sequence = (args.get("sequence") or "").strip().upper()
++    steps = []
++    if not sequence and args.get("roots"):
++        search_args = dict(args)
++        search_args.setdefault("limit", 6)
++        status, summary, detail = mode_search(search_args, note)
++        steps.append({"mode": "search", "status": status, "summary": summary, "detail": detail})
++        found = [item for item in (detail.get("with_sequence") or []) if item.get("sequence")]
++        preferred = args.get("prefer_sequence")
++        if preferred and any(item["sequence"] == preferred for item in found):
++            sequence = preferred
++        elif found:
++            sequence = found[0]["sequence"]
++        if not sequence:
++            sequence = args.get("fallback_sequence") or "KLVFFAE"
++    if not sequence:
++        sequence = args.get("fallback_sequence") or "KLVFAAE"
++    build_args = dict(args)
++    build_args["sequence"] = sequence
++    status, summary, detail = mode_build(build_args, note)
++    steps.append({"mode": "build", "status": status, "summary": summary, "detail": detail})
++    if status != "ok":
++        return status, summary, {"sequence": sequence, "steps": steps}
++    run_args = dict(args)
++    run_args["workdir"] = os.path.dirname(detail.get("gro") or "") or args.get("workdir")
++    status, summary, run_detail = mode_run(run_args, note)
++    steps.append({"mode": "run", "status": status, "summary": summary, "detail": run_detail})
++    return status, "{} ({} beads)".format(summary, detail.get("beads_total")), {
++        "sequence": sequence, "system": detail, "report": run_detail.get("report"),
++        "stages": run_detail.get("stages"), "steps": steps}
++
++
++def main(argv=None):
++    parser = argparse.ArgumentParser(prog="desk_ops.py")
++    parser.add_argument("--mode", default="")
++    parser.add_argument("--args", default="", help="JSON file with the job arguments")
++    parser.add_argument("--out", default="", help="where to write the result JSON")
++    parser.add_argument("--note", default="")
++    options = parser.parse_args(argv)
++
++    args = {}
++    if options.args:
++        args = read_json(options.args, {}) or {}
++    mode = (options.mode or args.get("mode") or "probe").strip().lower()
++    if mode not in MODES:
++        result = {"schema": SCHEMA, "status": "unsupported",
++                  "summary": "unknown mode {} (choose from {})".format(mode, ", ".join(MODES)),
++                  "detail": {}, "generated_at": now(), "mode": mode}
++        if options.out:
++            write_json(options.out, result)
++        print(json.dumps(result, ensure_ascii=False, indent=2))
++        return 2
++
++    started = time.time()
++    try:
++        if mode == "probe":
++            status, summary, detail = mode_probe(args, options.note)
++        elif mode == "search":
++            status, summary, detail = mode_search(args, options.note)
++        elif mode == "ff":
++            status, summary, detail = mode_ff(args, options.note)
++        elif mode == "build":
++            status, summary, detail = mode_build(args, options.note)
++        elif mode == "run":
++            status, summary, detail = mode_run(args, options.note)
++        else:
++            status, summary, detail = run_all(args, options.note)
++    except Exception as exc:  # noqa: BLE001 - published, never raised
++        status, summary, detail = "error", "{}: {}".format(type(exc).__name__, exc)[:300], {}
++
++    result = {
++        "schema": SCHEMA,
++        "mode": mode,
++        "status": status,
++        "summary": summary,
++        "detail": detail,
++        "generated_at": now(),
++        "seconds": round(time.time() - started, 2),
++        "python": sys.version.split()[0],
++        "host": platform.node(),
++    }
++    if options.out:
++        write_json(options.out, result)
++    print(json.dumps(result, ensure_ascii=False, indent=2))
++    return 0 if status in ("ok", "warn") else 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/core/hub_mailbox.py b/core/hub_mailbox.py
+index 95d3cd1..5227da1 100644
+--- a/core/hub_mailbox.py
++++ b/core/hub_mailbox.py
+@@ -52,7 +52,7 @@ SCHEMA_RESULT = "cgmd.mailbox.result.v1"
+ DEFAULT_REF = "hub/mailbox"
+ 
+ # Kinds the desktop worker knows.  shell is opt-in on the desk side.
+-KINDS = ("ping", "selfcheck", "smoke", "sync", "gmx", "deskdiag", "deskfix", "shell", "pipeline")
++KINDS = ("ping", "selfcheck", "smoke", "sync", "gmx", "deskdiag", "deskfix", "shell", "pipeline", "cgmd")
+ 
+ # One line per kind, printed by ``caps`` so a brand-new session never has to
+ # guess what the desk can do.
+@@ -65,6 +65,7 @@ JOB_HELP = {
+     "deskdiag": "file hashes repo-vs-desk, scheduled tasks, served HTML, boot ack, lock state",
+     "deskfix": "re-arm the logon trigger, keep the panel alive, launch the boot animation now",
+     "shell": "opt-in on the desk side (allow_shell=false by default)",
++    "cgmd": '{"mode": "build|run|probe|search|ff|all"} coarse-grained MD, no shell needed',
+     "pipeline": "Martini pipeline, not wired yet - use smoke or gmx",
+ }
+ 
+diff --git a/skills/cgmd-hub/runner/Invoke-CgmdMailbox.ps1 b/skills/cgmd-hub/runner/Invoke-CgmdMailbox.ps1
+index 6c01ad8..0beaf00 100644
+--- a/skills/cgmd-hub/runner/Invoke-CgmdMailbox.ps1
++++ b/skills/cgmd-hub/runner/Invoke-CgmdMailbox.ps1
+@@ -1162,6 +1162,76 @@ function Invoke-JobShell {
+     }
+ }
+ 
++function Get-DeskPython {
++    # Every interpreter this box has, best first.  The panel runs on a Windows
++    # python that is often NOT on PATH, so globbing the usual install roots is
++    # what actually finds it.
++    param($JobArgs)
++    $list = @()
++    $explicit = [string](Get-Property $JobArgs 'python' '')
++    if ($explicit) { $list += $explicit }
++    foreach ($name in @('python.exe', 'python3.exe', 'python')) {
++        $found = Get-Command $name -ErrorAction SilentlyContinue
++        if ($null -ne $found -and $found.Source) { $list += $found.Source }
++    }
++    $patterns = @()
++    if ($env:LOCALAPPDATA) { $patterns += (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python*\python.exe') }
++    if ($env:ProgramFiles) { $patterns += (Join-Path $env:ProgramFiles 'Python*\python.exe') }
++    $patterns += 'C:\Python3*\python.exe'
++    $patterns += 'C:\ProgramData\Anaconda3\python.exe'
++    foreach ($pattern in $patterns) {
++        foreach ($hit in @(Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue)) {
++            $list += $hit.FullName
++        }
++    }
++    foreach ($candidate in @($list | Select-Object -Unique)) {
++        if ($candidate -and (Test-Path -LiteralPath $candidate)) { return $candidate }
++    }
++    return ''
++}
++
++function Invoke-JobCgmd {
++    # Coarse-grained work without a shell: one fixed dispatcher script, six
++    # fixed modes.  The caller passes a JSON document, never a command line.
++    param($JobArgs)
++    $script = Join-Path $RepoPath 'code\cgmd\desk_ops.py'
++    if (-not (Test-Path -LiteralPath $script)) {
++        return [ordered]@{ status = 'unsupported'; summary = 'code/cgmd/desk_ops.py is missing on this checkout' }
++    }
++    $python = Get-DeskPython -JobArgs $JobArgs
++    if (-not $python) {
++        return [ordered]@{ status = 'unsupported'; summary = 'no python interpreter found on this workstation' }
++    }
++    $mode = [string](Get-Property $JobArgs 'mode' 'probe')
++    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
++    $argFile = Join-Path $script:StateDir ('cgmd-args-' + $stamp + '.json')
++    $resultFile = Join-Path $script:StateDir ('cgmd-result-' + $stamp + '.json')
++    $log = Join-Path $script:StateDir ('mailbox-cgmd-' + $stamp + '.log')
++    Write-JsonFile -Path $argFile -Data $JobArgs
++    $line = '"' + $python + '" "' + $script + '" --mode ' + $mode + ' --args "' + $argFile + '" --out "' + $resultFile + '"'
++    $limit = [math]::Min($MaxJobSeconds, [int](Get-Property $JobArgs 'timeout_s' 1800))
++    $code = Invoke-Captured -CommandLine $line -OutFile $log -TimeoutSeconds $limit -WorkingDirectory $RepoPath
++    $result = Read-JsonFile -Path $resultFile
++    $tail = @(Get-Tail -Path $log -Count 30)
++    if ($null -eq $result) {
++        return [ordered]@{
++            status    = $(if ($code -eq 124) { 'timeout' } else { 'fail' })
++            summary   = ('cgmd ' + $mode + ' exit ' + $code + ': no result file')
++            detail    = [ordered]@{ exit_code = $code; python = $python; mode = $mode }
++            logs_tail = $tail
++        }
++    }
++    $status = [string](Get-Property $result 'status' 'fail')
++    if ($code -eq 124) { $status = 'timeout' }
++    $summary = [string](Get-Property $result 'summary' '')
++    return [ordered]@{
++        status    = $status
++        summary   = ('cgmd ' + $mode + ': ' + $summary)
++        detail    = [ordered]@{ exit_code = $code; python = $python; mode = $mode; ops = $result }
++        logs_tail = $tail
++    }
++}
++
+ function Invoke-Job {
+     param($Request)
+     $kind = [string](Get-Property $Request 'kind' 'ping')
+@@ -1178,6 +1248,7 @@ function Invoke-Job {
+         'deskdiag'  { return Invoke-JobDeskdiag }
+         'deskfix'   { return Invoke-JobDeskfix -JobArgs $jobArgs }
+         'shell'     { return Invoke-JobShell -JobArgs $jobArgs }
++        'cgmd'      { return Invoke-JobCgmd -JobArgs $jobArgs }
+         'pipeline'  { return [ordered]@{ status = 'unsupported'
+                                          summary = 'the Martini pipeline job kind is not wired yet; use smoke or gmx' } }
+         default     { return [ordered]@{ status = 'unsupported'; summary = ('unknown kind: ' + $kind) } }
+diff --git a/tests/test_cgmd_desk_ops.py b/tests/test_cgmd_desk_ops.py
+new file mode 100644
+index 0000000..bad5c05
+--- /dev/null
++++ b/tests/test_cgmd_desk_ops.py
+@@ -0,0 +1,117 @@
++"""The `cgmd` mailbox capability (``code/cgmd/desk_ops.py``).
++
++The interesting parts are the ones that run without GROMACS: sequence ->
++backbone beads, the geometry of the water grid, and the sequence recovery that
++lets the desk describe a run it found on disk.  ``run`` itself is exercised on
++the workstation, not here.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++
++import pytest
++
++import desk_ops
++
++FAKE_ITP = """[ defaults ]
++1 2 no 1.0 1.0
++
++[ atomtypes ]
++Q5 72.0 0.0 A 0.47 4.4
++Qa 72.0 -1.0 A 0.47 4.4
++Qd 72.0 1.0 A 0.47 4.4
++W  72.0 0.0 A 0.47 2.0
++NA 36.0 1.0 A 0.47 1.0
++CL 36.0 -1.0 A 0.47 1.0
++
++[ moleculetype ]
++W 1
++[ atoms ]
++1 W 1 W W 1 0.0 72.0
++
++[ moleculetype ]
++NA 1
++[ atoms ]
++1 NA 1 NA NA 1 1.0 36.0
++
++[ moleculetype ]
++CL 1
++[ atoms ]
++1 CL 1 CL CL 1 -1.0 36.0
++"""
++
++
++@pytest.fixture()
++def ff_dir(tmp_path):
++    folder = os.path.join(str(tmp_path), "ff")
++    os.makedirs(folder)
++    with open(os.path.join(folder, "martini_v3.0.0.itp"), "w", encoding="utf-8") as handle:
++        handle.write(FAKE_ITP)
++    return folder
++
++
++def test_charges_carry_sidechain_and_termini():
++    charges = desk_ops.peptide_charges("KLVFFAE")
++    assert charges[0] == 2.0      # Lys sidechain + N-terminus
++    assert charges[-1] == -2.0    # Glu sidechain + C-terminus
++    assert charges[1:6] == [0.0] * 5
++    assert sum(charges) == 0.0
++
++
++def test_bead_type_follows_charge():
++    assert desk_ops.bead_type(1.0) == "Qd"
++    assert desk_ops.bead_type(-1.0) == "Qa"
++    assert desk_ops.bead_type(0.0) == "Q5"
++
++
++def test_build_writes_a_self_consistent_system(tmp_path, ff_dir):
++    workdir = os.path.join(str(tmp_path), "run")
++    system = desk_ops.build_system("KLVFFAE", workdir, os.path.join(ff_dir, "martini_v3.0.0.itp"),
++                                   box_nm=6.0)
++    assert system["residues"] == 7
++    assert system["beads_total"] == system["water_beads"] + system["na"] + system["cl"] + 7
++    assert system["na"] == system["cl"], "a neutral peptide needs a symmetric salt pair count"
++    beads, box = desk_ops.read_gro(system["gro"])
++    assert len(beads) == system["beads_total"]
++    assert box == 6.0
++    peptide = [item for item in beads if item[1] == "BB"]
++    assert len(peptide) == 7
++    assert all(0.0 <= point <= 6.0 for item in peptide for point in item[2]), "inside the box"
++    with open(system["top"], encoding="utf-8") as handle:
++        topology = handle.read()
++    assert "Peptide 1" in topology
++    assert "W {}".format(system["water_beads"]) in topology
++
++
++def test_gro_round_trip_recovers_the_sequence(tmp_path, ff_dir):
++    system = desk_ops.build_system("KLVFFAE", os.path.join(str(tmp_path), "seq"),
++                                   os.path.join(ff_dir, "martini_v3.0.0.itp"), box_nm=5.0)
++    assert desk_ops.sequence_from_gro(system["gro"]) == "KLVFFAE"
++
++
++def test_radius_of_gyration_and_clusters():
++    line = [(0.0, 0.0, 0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 0.0, 0.0)]
++    tight = [(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.0, 0.2, 0.0)]
++    apart = [(0.0, 0.0, 0.0), (3.0, 0.0, 0.0)]
++    assert desk_ops.radius_of_gyration(tight) < 0.2
++    assert desk_ops.contact_clusters(tight)["largest"] == 3
++    assert desk_ops.contact_clusters(apart)["largest"] == 1
++    assert line  # keep the fixture list referenced for readability
++
++
++def test_ff_bundle_picks_the_files_that_define_the_molecules(ff_dir):
++    includes, molecules = desk_ops.ff_bundle(os.path.join(ff_dir, "martini_v3.0.0.itp"))
++    assert "W" in molecules and "NA" in molecules and "CL" in molecules
++    assert includes == [os.path.join(ff_dir, "martini_v3.0.0.itp")]
++
++
++def test_main_reports_unsupported_mode(tmp_path):
++    out = os.path.join(str(tmp_path), "result.json")
++    code = desk_ops.main(["--mode", "nonsense", "--out", out])
++    assert code == 2
++    with open(out, encoding="utf-8") as handle:
++        payload = json.load(handle)
++    assert payload["status"] == "unsupported"
++    assert "unknown mode" in payload["summary"]
+-- 
+2.39.5
+
