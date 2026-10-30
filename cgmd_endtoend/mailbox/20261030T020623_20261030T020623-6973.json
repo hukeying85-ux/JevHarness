@@ -1,0 +1,459 @@
+{
+    "schema":  "cgmd.mailbox.result.v1",
+    "id":  "20261030T020623-6973",
+    "kind":  "smoke",
+    "status":  "ok",
+    "summary":  "gmx 2025.1: 100 ps integrated on gpu",
+    "detail":  {
+                   "exit_code":  0,
+                   "report":  {
+                                  "schema":  "cgmd.gmxsmoke.v1",
+                                  "generated_at":  "2026-10-30T10:07:59+08:00",
+                                  "status":  "ok",
+                                  "ok":  true,
+                                  "ps_requested":  100,
+                                  "ps_completed":  100,
+                                  "workdir":  "C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                  "gpu_id":  0,
+                                  "temperature_K":  300,
+                                  "dt_ps":  0.002,
+                                  "system_kind":  "spc",
+                                  "steps":  {
+                                                "md":  50000
+                                            },
+                                  "stages":  [
+                                                 {
+                                                     "stage":  "solvate",
+                                                     "command":  "gmx solvate -cs spc216.gro -box 2.500 -o smoke_box.gro -p smoke_box.top",
+                                                     "returncode":  0,
+                                                     "seconds":  0.1,
+                                                     "stderr_tail":  [
+                                                                         "Volume                 :      15.625 (nm^3)",
+                                                                         "Density                :     976.435 (g/l)",
+                                                                         "Number of solvent molecules:    510   ",
+                                                                         "Processing topology",
+                                                                         "Back Off! I just backed up smoke_box.top to ./#smoke_box.top.1#",
+                                                                         "GROMACS reminds you: \"The best way to obtain plausible negative examples is to run a docking program with a biophysics-based function.\" (Julie Bernauer)"
+                                                                     ],
+                                                     "missing_markers":  [
+
+                                                                         ]
+                                                 },
+                                                 {
+                                                     "stage":  "grompp-em",
+                                                     "command":  "gmx grompp -f smoke_em.mdp -c smoke_box.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box.top -o smoke_em.tpr -maxwarn 2",
+                                                     "returncode":  -1073741819,
+                                                     "seconds":  3.1,
+                                                     "stderr_tail":  [
+                                                                         "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                         "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                         "Working dir:  C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                                                         "Command line:",
+                                                                         "  gmx grompp -f smoke_em.mdp -c smoke_box.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box.top -o smoke_em.tpr -maxwarn 2",
+                                                                         "Generating 1-4 interactions: fudge = 0.5"
+                                                                     ],
+                                                     "output_tail":  [
+                                                                         ":-) GROMACS - gmx grompp, 2025.1 (-:",
+                                                                         "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                         "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                         "Working dir:  C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                                                         "Command line:",
+                                                                         "  gmx grompp -f smoke_em.mdp -c smoke_box.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box.top -o smoke_em.tpr -maxwarn 2",
+                                                                         "Generating 1-4 interactions: fudge = 0.5"
+                                                                     ],
+                                                     "missing_markers":  [
+
+                                                                         ]
+                                                 },
+                                                 {
+                                                     "stage":  "grompp-em-inline",
+                                                     "command":  "gmx grompp -f smoke_em.mdp -c smoke_box.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box_inline.top -o smoke_em.tpr -maxwarn 2",
+                                                     "returncode":  0,
+                                                     "seconds":  0.12,
+                                                     "stderr_tail":  [
+                                                                         "Working dir:  C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                                                         "Command line:",
+                                                                         "  gmx grompp -f smoke_em.mdp -c smoke_box.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box_inline.top -o smoke_em.tpr -maxwarn 2",
+                                                                         "Number of degrees of freedom in T-Coupling group rest is 3057.00",
+                                                                         "The integrator does not provide a ensemble temperature, there is no system ensemble temperature",
+                                                                         "GROMACS reminds you: \"Since the mathematicians have invaded the theory of relativity I do not understand it myself any more.\" (Albert Einstein)"
+                                                                     ],
+                                                     "output_tail":  [
+                                                                         "Setting the LD random seed to 1807218398",
+                                                                         "Generated 3 of the 3 non-bonded parameter combinations",
+                                                                         "Excluding 2 bonded neighbours molecule type \u0027SOL\u0027",
+                                                                         "Analysing residue names:",
+                                                                         "There are:   510      Water residues",
+                                                                         "The largest distance between excluded atoms is 0.164 nm between atom 1202 and 1203",
+                                                                         "Calculating fourier grid dimensions for X Y Z",
+                                                                         "Using a fourier grid of 24x24x24, spacing 0.104 0.104 0.104",
+                                                                         "Estimate for the relative computational load of the PME mesh part: 0.25",
+                                                                         "This run will generate roughly 0 Mb of data",
+                                                                         ":-) GROMACS - gmx grompp, 2025.1 (-:",
+                                                                         "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                         "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                         "Working dir:  C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                                                         "Command line:",
+                                                                         "  gmx grompp -f smoke_em.mdp -c smoke_box.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box_inline.top -o smoke_em.tpr -maxwarn 2",
+                                                                         "Number of degrees of freedom in T-Coupling group rest is 3057.00",
+                                                                         "The integrator does not provide a ensemble temperature, there is no system ensemble temperature",
+                                                                         "GROMACS reminds you: \"Since the mathematicians have invaded the theory of relativity I do not understand it myself any more.\" (Albert Einstein)"
+                                                                     ],
+                                                     "missing_markers":  [
+
+                                                                         ]
+                                                 },
+                                                 {
+                                                     "stage":  "mdrun-em",
+                                                     "command":  "gmx mdrun -deffnm smoke_em -nb cpu",
+                                                     "returncode":  0,
+                                                     "seconds":  1.07,
+                                                     "stderr_tail":  [
+                                                                         "writing lowest energy coordinates.",
+                                                                         "Steepest Descents converged to Fmax \u003c 100 in 239 steps",
+                                                                         "Potential Energy  = -2.7885975e+04",
+                                                                         "Maximum force     =  9.7577347e+01 on atom 487",
+                                                                         "Norm of force     =  9.1764766e+00",
+                                                                         "GROMACS reminds you: \"She Needs Cash to Buy Aspirine For Her Pain\" (LIVE)"
+                                                                     ],
+                                                     "output_tail":  [
+                                                                         "step 11: One or more water molecules can not be settled.",
+                                                                         "Check for bad contacts and/or reduce the timestep if appropriate.",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "step 14: One or more water molecules can not be settled.",
+                                                                         "Check for bad contacts and/or reduce the timestep if appropriate.",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "step 25: One or more water molecules can not be settled.",
+                                                                         "Check for bad contacts and/or reduce the timestep if appropriate.",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "step 28: One or more water molecules can not be settled.",
+                                                                         "Check for bad contacts and/or reduce the timestep if appropriate.",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "step 34: One or more water molecules can not be settled.",
+                                                                         "Check for bad contacts and/or reduce the timestep if appropriate.",
+                                                                         "step 34: One or more water molecules can not be settled.",
+                                                                         "Check for bad contacts and/or reduce the timestep if appropriate.",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "step 39: One or more water molecules can not be settled.",
+                                                                         "Check for bad contacts and/or reduce the timestep if appropriate.",
+                                                                         "Wrote pdb files with previous and current coordinates",
+                                                                         "writing lowest energy coordinates.",
+                                                                         "Steepest Descents converged to Fmax \u003c 100 in 239 steps",
+                                                                         "Potential Energy  = -2.7885975e+04",
+                                                                         "Maximum force     =  9.7577347e+01 on atom 487",
+                                                                         "Norm of force     =  9.1764766e+00",
+                                                                         "GROMACS reminds you: \"She Needs Cash to Buy Aspirine For Her Pain\" (LIVE)"
+                                                                     ],
+                                                     "missing_markers":  [
+
+                                                                         ]
+                                                 },
+                                                 {
+                                                     "stage":  "grompp-md",
+                                                     "command":  "gmx grompp -f smoke_md.mdp -c smoke_em.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box_inline.top -o smoke_md.tpr -maxwarn 2",
+                                                     "returncode":  0,
+                                                     "seconds":  0.1,
+                                                     "stderr_tail":  [
+                                                                         "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                         "Working dir:  C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                                                         "Command line:",
+                                                                         "  gmx grompp -f smoke_md.mdp -c smoke_em.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box_inline.top -o smoke_md.tpr -maxwarn 2",
+                                                                         "Number of degrees of freedom in T-Coupling group System is 3057.00",
+                                                                         "GROMACS reminds you: \"She Needs Cash to Buy Aspirine For Her Pain\" (LIVE)"
+                                                                     ],
+                                                     "output_tail":  [
+                                                                         "Setting the LD random seed to -805310465",
+                                                                         "Generated 3 of the 3 non-bonded parameter combinations",
+                                                                         "Excluding 2 bonded neighbours molecule type \u0027SOL\u0027",
+                                                                         "turning H bonds into constraints...",
+                                                                         "Setting gen_seed to -16928787",
+                                                                         "Velocities were taken from a Maxwell distribution at 300 K",
+                                                                         "Analysing residue names:",
+                                                                         "There are:   510      Water residues",
+                                                                         "The largest distance between excluded atoms is 0.164 nm between atom 113 and 114",
+                                                                         "Determining Verlet buffer for a tolerance of 0.005 kJ/mol/ps at 300 K",
+                                                                         "Calculated rlist for 1x1 atom pair-list as 1.036 nm, buffer size 0.036 nm",
+                                                                         "Set rlist, assuming 4x4 atom pair-list, to 1.000 nm, buffer size 0.000 nm",
+                                                                         "Note that mdrun will redetermine rlist based on the actual pair-list setup",
+                                                                         "Calculating fourier grid dimensions for X Y Z",
+                                                                         "Using a fourier grid of 24x24x24, spacing 0.104 0.104 0.104",
+                                                                         "Estimate for the relative computational load of the PME mesh part: 0.27",
+                                                                         "This run will generate roughly 4 Mb of data",
+                                                                         ":-) GROMACS - gmx grompp, 2025.1 (-:",
+                                                                         "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                         "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                         "Working dir:  C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                                                         "Command line:",
+                                                                         "  gmx grompp -f smoke_md.mdp -c smoke_em.gro -p C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box_inline.top -o smoke_md.tpr -maxwarn 2",
+                                                                         "Number of degrees of freedom in T-Coupling group System is 3057.00",
+                                                                         "GROMACS reminds you: \"She Needs Cash to Buy Aspirine For Her Pain\" (LIVE)"
+                                                                     ],
+                                                     "missing_markers":  [
+
+                                                                         ]
+                                                 },
+                                                 {
+                                                     "stage":  "mdrun-md-gpu",
+                                                     "command":  "gmx mdrun -deffnm smoke_md -nb gpu -gpu_id 0",
+                                                     "returncode":  0,
+                                                     "seconds":  16.23,
+                                                     "stderr_tail":  [
+                                                                         "Writing final coordinates.",
+                                                                         "               Core t (s)   Wall t (s)        (%)",
+                                                                         "       Time:      360.000       15.000     2400.0",
+                                                                         "                 (ns/day)    (hour/ns)",
+                                                                         "Performance:      576.012        0.042",
+                                                                         "GROMACS reminds you: \"There\u0027s No Room For the Weak\" (Joy Division)"
+                                                                     ],
+                                                     "output_tail":  [
+                                                                         ":-) GROMACS - gmx mdrun, 2025.1 (-:",
+                                                                         "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                         "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                         "Working dir:  C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759",
+                                                                         "Command line:",
+                                                                         "  gmx mdrun -deffnm smoke_md -nb gpu -gpu_id 0",
+                                                                         "Compiled SIMD is AVX2_256, but CPU also supports AVX_512 (see log).",
+                                                                         "Reading file smoke_md.tpr, VERSION 2025.1 (single precision)",
+                                                                         "Changing nstlist from 10 to 100, rlist from 1 to 1.173",
+                                                                         "1 GPU selected for this run.",
+                                                                         "Mapping of GPU IDs to the 2 GPU tasks in the 1 rank on this node:",
+                                                                         "  PP:0,PME:0",
+                                                                         "PP tasks will do (non-perturbed) short-ranged interactions on the GPU",
+                                                                         "PP task will update and constrain coordinates on the GPU",
+                                                                         "PME tasks will do all aspects on the GPU",
+                                                                         "Using 1 MPI thread",
+                                                                         "Using 24 OpenMP threads ",
+                                                                         "starting mdrun \u0027CGMD smoke test -- SPC water\u0027",
+                                                                         "50000 steps,    100.0 ps.",
+                                                                         "Step 0  Warning: pressure scaling more than 1%, mu: 0.988311 0.988311 0.988311",
+                                                                         "Writing final coordinates.",
+                                                                         "               Core t (s)   Wall t (s)        (%)",
+                                                                         "       Time:      360.000       15.000     2400.0",
+                                                                         "                 (ns/day)    (hour/ns)",
+                                                                         "Performance:      576.012        0.042",
+                                                                         "GROMACS reminds you: \"There\u0027s No Room For the Weak\" (Joy Division)"
+                                                                     ],
+                                                     "missing_markers":  [
+
+                                                                         ]
+                                                 }
+                                             ],
+                                  "stage_error":  null,
+                                  "notes":  [
+                                                "grompp failed on the bundled oplsaa.ff, retried with an inline SPC topology"
+                                            ],
+                                  "software":  {
+                                                   "generated_at":  "2026-10-30T10:07:59+08:00",
+                                                   "hostname":  "DESKTOP-IEUDGS5",
+                                                   "platform":  "Microsoft Windows 10 专业版",
+                                                   "machine":  "AMD64",
+                                                   "python":  "",
+                                                   "packages":  {
+                                                                    "numpy":  "not checked (native run)",
+                                                                    "MDAnalysis":  "not checked (native run)",
+                                                                    "vermouth":  "not checked (native run)",
+                                                                    "matplotlib":  "not checked (native run)"
+                                                                },
+                                                   "tools":  {
+                                                                 "gmx":  "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                 "nvidia-smi":  "C:\\WINDOWS\\system32\\nvidia-smi.exe",
+                                                                 "git":  "F:\\Program Files\\Git\\cmd\\git.exe"
+                                                             },
+                                                   "gpus":  [
+                                                                {
+                                                                    "name":  "NVIDIA RTX A4000",
+                                                                    "driver":  "596.71",
+                                                                    "memory":  "16376 MiB"
+                                                                }
+                                                            ],
+                                                   "martini3_dir":  "",
+                                                   "gromacs":  {
+                                                                   "version":  "2025.1",
+                                                                   "executable":  "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                   "available":  true,
+                                                                   "precision":  "mixed",
+                                                                   "memory_model":  "64 bit",
+                                                                   "simd":  "AVX2_256",
+                                                                   "gpu_support":  "CUDA",
+                                                                   "cuda_runtime":  "12.80",
+                                                                   "cuda_driver":  "13.20",
+                                                                   "fft":  "fftw3",
+                                                                   "openmp":  null,
+                                                                   "compiler":  null,
+                                                                   "cuda":  true,
+                                                                   "raw":  [
+                                                                               ":-) GROMACS - gmx, 2025.1 (-:",
+                                                                               "",
+                                                                               "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                                                                               "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                               "Working dir:  C:\\Users\\BNI\\AppData\\Local\\Temp",
+                                                                               "Command line:",
+                                                                               "  gmx --version",
+                                                                               "",
+                                                                               "GROMACS version:     2025.1",
+                                                                               "Precision:           mixed",
+                                                                               "Memory model:        64 bit",
+                                                                               "MPI library:         thread_mpi",
+                                                                               "OpenMP support:      enabled (GMX_OPENMP_MAX_THREADS = 128)",
+                                                                               "GPU support:         CUDA",
+                                                                               "NBNxM GPU setup:     super-cluster 2x2x2 / cluster 8 (cluster-pair splitting on)",
+                                                                               "SIMD instructions:   AVX2_256",
+                                                                               "CPU FFT library:     fftw3",
+                                                                               "GPU FFT library:     cuFFT",
+                                                                               "Multi-GPU FFT:       none",
+                                                                               "RDTSCP usage:        enabled",
+                                                                               "TNG support:         enabled",
+                                                                               "Hwloc support:       disabled",
+                                                                               "Tracing support:     disabled",
+                                                                               "C compiler:          C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe MSVC 19.43.34810.0",
+                                                                               "C compiler flags:    /arch:AVX2 /wd4800 /wd4355 /wd4996 /wd4305 /wd4244 /wd4101 /wd4267 /wd4090 /wd4068 /O2 /Ob2 /DNDEBUG",
+                                                                               "C++ compiler:        C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe MSVC 19.43.34810.0",
+                                                                               "C++ compiler flags:  /arch:AVX2 /wd4800 /wd4355 /wd4996 /wd4305 /wd4244 /wd4267 /wd4068 /permissive- /utf-8 /analyze /analyze:stacksize 70000 /wd6001 /wd6011 /wd6053 /wd6054 /wd6385 /wd6386 /wd6387 /wd28199 /wd6239 /wd6240 /wd6294 /wd6326 /wd28020 /wd6330 /wd6993 /wd6031 /wd6244 /wd6246 SHELL:-openmp /O2 /Ob2 /DNDEBUG",
+                                                                               "BLAS library:        Internal",
+                                                                               "LAPACK library:      Internal",
+                                                                               "CUDA compiler:       D:/applications/CUDA/bin/nvcc.exe nvcc: NVIDIA (R) Cuda compiler driver;Copyright (c) 2005-2025 NVIDIA Corporation;Built on Fri_Feb_21_20:42:46_Pacific_Standard_Time_2025;Cuda compilation tools, release 12.8, V12.8.93;Build cuda_12.8.r12.8/compiler.35583870_0"
+                                                                           ],
+                                                                   "data_prefix":  "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                                   "version_returncode":  0,
+                                                                   "banner":  ":-) GROMACS - gmx, 2025.1 (-:"
+                                                               }
+                                               },
+                                  "system":  {
+                                                 "kind":  "spc-water-box",
+                                                 "atoms":  1530,
+                                                 "molecules":  510,
+                                                 "box_nm":  [
+                                                                2.5,
+                                                                2.5,
+                                                                2.5
+                                                            ],
+                                                 "gro":  "C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box.gro",
+                                                 "top":  "C:\\Users\\BNI\\cgmd-runs\\smoke-native-20261030-100759\\smoke_box_inline.top",
+                                                 "topology":  {
+                                                                  "force_field":  "inline (self-contained SPC parameters)",
+                                                                  "water":  "SPC/E, SETTLE on OW",
+                                                                  "reason":  "grompp failed on oplsaa.ff; every parameter is now written to the topology"
+                                                              }
+                                             },
+                                  "mdrun":  {
+                                                "performance_ns_per_day":  576.012,
+                                                "steps_requested":  50000,
+                                                "dt_ps":  0.002,
+                                                "simulated_ps":  100,
+                                                "time_ps":  100,
+                                                "finished":  true,
+                                                "fatal":  null
+                                            },
+                                  "accelerator":  "gpu",
+                                  "seconds_total":  22.07,
+                                  "host":  {
+                                               "hostname":  "DESKTOP-IEUDGS5",
+                                               "platform":  "Microsoft Windows 10 专业版",
+                                               "python":  "",
+                                               "gpus":  [
+                                                            {
+                                                                "name":  "NVIDIA RTX A4000",
+                                                                "driver":  "596.71",
+                                                                "memory":  "16376 MiB"
+                                                            }
+                                                        ],
+                                               "gromacs":  "2025.1"
+                                           },
+                                  "environment":  {
+                                                      "data_prefix":  "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+                                                      "share_top":  "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\share\\gromacs\\top",
+                                                      "oplsaa_dir":  "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\share\\gromacs\\top\\oplsaa.ff",
+                                                      "files":  {
+                                                                    "oplsaa.ff\\forcefield.itp":  true,
+                                                                    "oplsaa.ff\\ffbonded.itp":  true,
+                                                                    "oplsaa.ff\\ffnonbonded.itp":  true,
+                                                                    "oplsaa.ff\\spce.itp":  true,
+                                                                    "oplsaa.ff\\spc.itp":  true,
+                                                                    "oplsaa.ff\\tip3p.itp":  true,
+                                                                    "oplsaa.ff\\ions.itp":  true,
+                                                                    "spc216.gro":  true,
+                                                                    "charmm36.ff\\forcefield.itp":  false,
+                                                                    "amber99sb-ildn.ff\\forcefield.itp":  true
+                                                                }
+                                                  },
+                                  "log_tail":  [
+                                                   " Constraints               1   24          2       0.000          0.008   0.0",
+                                                   " GPU constr. setup         1   24          1       0.000          0.007   0.0",
+                                                   " Kinetic energy            1   24      10001       0.165          9.667   1.1",
+                                                   " Rest                                              1.054         61.964   7.0",
+                                                   "--------------------------------------------------------------------------------",
+                                                   " Total                                            15.000        881.460 100.0",
+                                                   "--------------------------------------------------------------------------------",
+                                                   " Breakdown of PME mesh activities",
+                                                   "--------------------------------------------------------------------------------",
+                                                   " Wait PME GPU gather       1   24      50001       0.324         19.020   2.2",
+                                                   " Reduce GPU PME F          1   24      50001       0.078          4.555   0.5",
+                                                   " Launch PME GPU ops.       1   24     450009       2.862        168.178  19.1",
+                                                   "--------------------------------------------------------------------------------",
+                                                   "",
+                                                   "               Core t (s)   Wall t (s)        (%)",
+                                                   "       Time:      360.000       15.000     2400.0",
+                                                   "                 (ns/day)    (hour/ns)",
+                                                   "Performance:      576.012        0.042",
+                                                   "Finished mdrun on rank 0 Fri Oct 30 10:08:20 2026",
+                                                   ""
+                                               ],
+                                  "files":  [
+                                                "#smoke_box.top.1#",
+                                                "mdout.mdp",
+                                                "smoke_box.gro",
+                                                "smoke_box.top",
+                                                "smoke_box_inline.top",
+                                                "smoke_em.edr",
+                                                "smoke_em.gro",
+                                                "smoke_em.log",
+                                                "smoke_em.mdp",
+                                                "smoke_em.tpr",
+                                                "smoke_em.trr",
+                                                "smoke_md.cpt",
+                                                "smoke_md.edr",
+                                                "smoke_md.gro",
+                                                "smoke_md.log",
+                                                "smoke_md.mdp",
+                                                "smoke_md.tpr",
+                                                "smoke_md.xtc",
+                                                "step11b_n1.pdb",
+                                                "step11b_n12.pdb",
+                                                "step11b_n2.pdb",
+                                                "step11b_n3.pdb",
+                                                "step11c_n1.pdb",
+                                                "step11c_n12.pdb",
+                                                "step11c_n2.pdb",
+                                                "step11c_n3.pdb",
+                                                "step14b_n2.pdb",
+                                                "step14c_n2.pdb",
+                                                "step25b_n8.pdb",
+                                                "step25c_n8.pdb",
+                                                "step28b_n8.pdb",
+                                                "step28c_n8.pdb",
+                                                "step34b_n12.pdb",
+                                                "step34b_n8.pdb",
+                                                "step34c_n12.pdb",
+                                                "step34c_n8.pdb",
+                                                "step39b_n8.pdb",
+                                                "step39c_n8.pdb"
+                                            ],
+                                  "stages_seconds":  20.72
+                              },
+                   "artifact":  "results/status/gmx_smoke.json"
+               },
+    "logs_tail":  [
+                      "CGMD_EXIT_CODE=0 "
+                  ],
+    "note":  "",
+    "requested_by":  "user",
+    "peer":  "hukeying85-ux/JevHarness",
+    "worker":  "DESKTOP-IEUDGS5",
+    "started_at":  "2026-10-30T10:07:57+08:00",
+    "finished_at":  "2026-10-30T10:08:26+08:00",
+    "seconds":  28.54
+}

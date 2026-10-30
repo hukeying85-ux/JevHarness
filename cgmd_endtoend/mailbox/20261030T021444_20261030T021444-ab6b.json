@@ -1,0 +1,190 @@
+{
+    "schema":  "cgmd.mailbox.result.v1",
+    "id":  "20261030T021444-ab6b",
+    "kind":  "selfcheck",
+    "status":  "fail",
+    "summary":  "selfcheck: 15 pass / 3 warn / 0 fail",
+    "detail":  {
+                   "exit_code":  6,
+                   "report":  {
+                                  "schema":  "cgmd.selfcheck.v1",
+                                  "checked_at":  "2026-10-30T10:15:23+08:00",
+                                  "overall":  "warn",
+                                  "exit_code":  6,
+                                  "config":  "C:\\cgmd\\0fuye\\skills\\cgmd-hub\\config\\cgmd_hub.local.json",
+                                  "host":  {
+                                               "computer":  "DESKTOP-IEUDGS5",
+                                               "user":  "BNI",
+                                               "powershell":  "5.1.19041.6456",
+                                               "os":  "Microsoft Windows 10 专业版",
+                                               "repo":  "C:\\cgmd\\0fuye",
+                                               "branch":  "arena/32cd826e-0fuye",
+                                               "wsl_distro":  "Ubuntu-18.04",
+                                               "gpu_id":  0
+                                           },
+                                  "versions":  {
+                                                   "gromacs":  "2025.1",
+                                                   "gromacs_native":  "2025.1",
+                                                   "gromacs_wsl":  "2018.1",
+                                                   "gromacs_gpu":  "CUDA",
+                                                   "nvidia":  "NVIDIA RTX A4000, 16376 MiB",
+                                                   "python":  "3.6.9",
+                                                   "vermouth":  "",
+                                                   "mdanalysis":  "",
+                                                   "matplotlib":  "",
+                                                   "martini3":  ""
+                                               },
+                                  "desk":  {
+                                               "panel_dir":  "C:\\cgmd\\0fuye\\code\\panel",
+                                               "root":  "C:\\0apps\\ArenaDesk",
+                                               "version":  "2.8.0",
+                                               "http":  "up"
+                                           },
+                                  "summary":  {
+                                                  "checks":  18,
+                                                  "passed":  15,
+                                                  "warnings":  3,
+                                                  "failed":  0,
+                                                  "seconds":  24.7
+                                              },
+                                  "checks":  [
+                                                 {
+                                                     "id":  "repo",
+                                                     "title":  "repository clone",
+                                                     "status":  "pass",
+                                                     "detail":  "C:\\cgmd\\0fuye",
+                                                     "seconds":  0.06
+                                                 },
+                                                 {
+                                                     "id":  "origin",
+                                                     "title":  "origin lock",
+                                                     "status":  "pass",
+                                                     "detail":  "https://github.com/hukeying85-ux/0fuye.git",
+                                                     "seconds":  0.11
+                                                 },
+                                                 {
+                                                     "id":  "branch",
+                                                     "title":  "branch synchronisation",
+                                                     "status":  "pass",
+                                                     "detail":  "arena/32cd826e-0fuye @ f30e11a (ahead 0, behind 0)",
+                                                     "seconds":  1.5
+                                                 },
+                                                 {
+                                                     "id":  "creds",
+                                                     "title":  "git credentials",
+                                                     "status":  "pass",
+                                                     "detail":  "hukeying85-ux / store --file=C:/cgmd/0fuye/skills/cgmd-hub/state/git-credentials",
+                                                     "seconds":  0.09
+                                                 },
+                                                 {
+                                                     "id":  "wsl",
+                                                     "title":  "WSL2 distro",
+                                                     "status":  "pass",
+                                                     "detail":  "Ubuntu-18.04 | Ubuntu 18.04.6 LTS | 48 cores | 31.2 GB RAM",
+                                                     "seconds":  16.54
+                                                 },
+                                                 {
+                                                     "id":  "gpu",
+                                                     "title":  "CUDA device",
+                                                     "status":  "pass",
+                                                     "detail":  "NVIDIA RTX A4000, 16376 MiB",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "gromacs",
+                                                     "title":  "GROMACS + CUDA",
+                                                     "status":  "pass",
+                                                     "detail":  "GROMACS 2025.1 native windows (GPU support: CUDA) | wsl 2018.1 (cpu only) unused",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "martini3",
+                                                     "title":  "Martini 3 force field",
+                                                     "status":  "warn",
+                                                     "detail":  "martini_v3.0.0.itp not found; pip install martini-forcefields or set CGMD_MARTINI3_DIR",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "python",
+                                                     "title":  "python packages",
+                                                     "status":  "warn",
+                                                     "detail":  "missing: vermouth, insane, MDAnalysis, matplotlib | bash code/cgmd/setup_env.sh --install --yes | only the Martini pipeline needs these",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "tools",
+                                                     "title":  "martinize2 + insane",
+                                                     "status":  "warn",
+                                                     "detail":  "neither on PATH | only the Martini pipeline needs them; the native GROMACS path does not",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "disk",
+                                                     "title":  "free space",
+                                                     "status":  "pass",
+                                                     "detail":  "855.6 GB free in WSL home (workdir ~/cgmd-runs)",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "launcher",
+                                                     "title":  "silent launcher",
+                                                     "status":  "pass",
+                                                     "detail":  "CGMDHub.exe 7680 bytes",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "desk-src",
+                                                     "title":  "Arena Desk source",
+                                                     "status":  "pass",
+                                                     "detail":  "C:\\cgmd\\0fuye\\code\\panel (12 core files)",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "desk-app",
+                                                     "title":  "Arena Desk deployed",
+                                                     "status":  "pass",
+                                                     "detail":  "C:\\0apps\\ArenaDesk | version 2.8.0",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "desk-http",
+                                                     "title":  "Arena Desk panel",
+                                                     "status":  "pass",
+                                                     "detail":  "127.0.0.1:18765 | version 2.8.0 | 8 tasks | /mobile 200 | /assets/boot-mascot.jpg 200 | /style.css 200",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "gmxrun",
+                                                     "title":  "last 100 ps mdrun",
+                                                     "status":  "pass",
+                                                     "detail":  "ok | gmx 2025.1 | 100 ps | 2026-10-30T10:07:59+08:00",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "task",
+                                                     "title":  "poll task",
+                                                     "status":  "pass",
+                                                     "detail":  "CGMD-Hub-Poll | state Ready | last run 10/30/2026 10:14:14 | result 0",
+                                                     "seconds":  0
+                                                 },
+                                                 {
+                                                     "id":  "beacon",
+                                                     "title":  "phone beacon",
+                                                     "status":  "pass",
+                                                     "detail":  "POST https://ntfy.sh/arena-beacon-95bc796a66",
+                                                     "seconds":  1.91
+                                                 }
+                                             ]
+                              }
+               },
+    "logs_tail":  [
+                      "CGMD_EXIT_CODE=6 "
+                  ],
+    "note":  "",
+    "requested_by":  "user",
+    "peer":  "hukeying85-ux/JevHarness",
+    "worker":  "DESKTOP-IEUDGS5",
+    "started_at":  "2026-10-30T10:14:57+08:00",
+    "finished_at":  "2026-10-30T10:15:23+08:00",
+    "seconds":  26.33
+}

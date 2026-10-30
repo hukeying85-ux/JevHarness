@@ -1,0 +1,16 @@
+; Martini 3 energy minimisation (doc §7: steep, remove soft-core overlaps)
+integrator        = steep
+emtol             = 100.0
+emstep            = 0.01
+nsteps            = 20000
+
+cutoff-scheme     = Verlet
+nstlist           = 20
+pbc               = xyz
+coulombtype       = reaction-field
+epsilon_r         = 15
+rcoulomb          = 1.1
+vdwtype           = Cut-off
+rvdw              = 1.1
+vdw-modifier      = Potential-shift
+constraints       = none
