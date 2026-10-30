@@ -288,3 +288,107 @@ def test_install_skill_supports_cgmd_desk_and_all(tmp_path):
     for client_dir in (".agents", ".claude"):
         for skill_name in ("jev-harness", "cgmd-desk"):
             assert (project / client_dir / "skills" / skill_name / "SKILL.md").is_file()
+
+
+def test_expand_secondary_structure_and_stage_flat_itp(tmp_path):
+    from auto_jev import cgmd_pipeline
+
+    assert cgmd_pipeline.expand_secondary_structure("h", 5) == "HHHHH"
+    assert cgmd_pipeline.expand_secondary_structure("HHCEC", 5) == "HHCEC"
+    with pytest.raises(cgmd_pipeline.PipelineClientError):
+        cgmd_pipeline.expand_secondary_structure("HH", 5)
+
+    ff_dir = tmp_path / "ff"
+    wdir = tmp_path / "run"
+    ff_dir.mkdir()
+    wdir.mkdir()
+    src_itp = ff_dir / "martini_v3.0.0.itp"
+    src_itp.write_text("[ defaults ]\n1 2 no 1.0 1.0\n", encoding="utf-8")
+    pep_itp = wdir / "Protein_0.itp"
+    pep_itp.write_text("[ moleculetype ]\nProtein_0 1\n", encoding="utf-8")
+    top_file = wdir / "topol.top"
+    top_file.write_text(
+        '#include "../ff/martini_v3.0.0.itp"\n#include "Protein_0.itp"\n',
+        encoding="utf-8",
+    )
+
+    staged = cgmd_pipeline.stage_flat_itp_includes(top_file, [src_itp, pep_itp])
+    assert "martini_v3.0.0.itp" in staged
+    assert (wdir / "martini_v3.0.0.itp").is_file()
+    rewritten = top_file.read_text(encoding="utf-8")
+    assert '#include "martini_v3.0.0.itp"' in rewritten
+    assert "../ff/" not in rewritten
+
+
+def test_validate_pipeline_deliverables_rejects_heavy_trajectories(tmp_path):
+    from auto_jev import cgmd_pipeline
+
+    res = tmp_path / "results"
+    figs = res / "figures"
+    figs.mkdir(parents=True)
+    (res / "summary_metrics.json").write_text('{"schema":"cgmd.summary.v1"}', encoding="utf-8")
+    (figs / "z_distance_vs_time.svg").write_text("<svg/>", encoding="utf-8")
+
+    ok = cgmd_pipeline.validate_pipeline_deliverables(res)
+    assert ok["ok"] is True
+    assert ok["svg_figures"] == ["figures/z_distance_vs_time.svg"]
+
+    (res / "prod.xtc").write_bytes(b"binary-traj")
+    bad = cgmd_pipeline.validate_pipeline_deliverables(res)
+    assert bad["ok"] is False
+    assert "prod.xtc" in bad["forbidden_files"]
+
+
+def test_screen_and_submit_pipeline_prescreen_gate(monkeypatch, capsys):
+    import json
+
+    dispatched: list[tuple[str, dict]] = []
+
+    def fake_dispatch(kind, payload, **_kw):
+        dispatched.append((kind, payload))
+        return {"status": "ok", "id": "20261030T100000-cafe"}
+
+    monkeypatch.setattr(cgmd_desk, "dispatch_job", fake_dispatch)
+
+    # Anionic poly-D should be rejected before spending GPU hours
+    rc_bad = cgmd_desk.main(["--no-sync", "submit-pipeline", "--name", "polyD", "--sequence", "DDDDDDDDDDDD"])
+    out_bad = json.loads(capsys.readouterr().out)
+    assert rc_bad == 6
+    assert out_bad["status"] == "rejected_by_prescreen"
+    assert dispatched == []
+
+    # Magainin-2 passes pre-screen and dispatches kind='pipeline'
+    rc_ok = cgmd_desk.main(
+        ["--no-sync", "submit-pipeline", "--name", "magainin2", "--sequence", "GIGKFLHSAKKFGKAFVGEIMNS", "--prod-ns", "20"]
+    )
+    out_ok = json.loads(capsys.readouterr().out)
+    assert rc_ok == 0
+    assert out_ok["prescreen"]["tier"] == "full_production_1000ns"
+    assert len(dispatched) == 1
+    assert dispatched[0][0] == "pipeline"
+    assert dispatched[0][1]["peptide_name"] == "magainin2"
+    assert dispatched[0][1]["production_ns"] == 20.0
+
+
+def test_build_martini3_system_end_to_end_when_tools_present(tmp_path):
+    import shutil
+    from auto_jev import cgmd_pipeline
+
+    if not shutil.which("martinize2") or not shutil.which("insane"):
+        pytest.skip("martinize2 / insane not installed in current test environment")
+
+    ff_cache = Path("/tmp/martini-forcefields")
+    manifest = cgmd_pipeline.build_martini3_system(
+        tmp_path / "magainin2_run",
+        sequence="GIGKFLHSAKKFGKAFVGEIMNS",
+        peptide_name="magainin2",
+        martini3_dir=ff_cache if ff_cache.is_dir() else None,
+    )
+    assert manifest["validation"]["consistent"] is True
+    assert manifest["validation"]["difference"] == 0
+    assert manifest["peptide_beads"] == 54
+    top_text = (tmp_path / "magainin2_run" / "topol.top").read_text(encoding="utf-8")
+    assert '#include "martini_v3.0.0.itp"' in top_text
+    assert '#include "Protein_0.itp"' in top_text
+
+

@@ -39,7 +39,14 @@ python3 -m auto_jev.cgmd_desk verify-smoke
 
 # Laptop / same-LAN sub-second mode (automatically degrades to hub/mailbox if unreachable)
 python3 -m auto_jev.cgmd_desk run --kind ping --lan-host 192.168.110.226
+
+# Full 12-stage Martini 3 AMP membrane-pore workflow (pre-screen -> build -> submit)
+python3 -m auto_jev.cgmd_desk screen --name magainin2 --sequence GIGKFLHSAKKFGKAFVGEIMNS --ss H
+python3 -m auto_jev.cgmd_desk prepare-system --workdir /tmp/cgmd_magainin2 --name magainin2 --sequence GIGKFLHSAKKFGKAFVGEIMNS
+python3 -m auto_jev.cgmd_desk submit-pipeline --name magainin2 --sequence GIGKFLHSAKKFGKAFVGEIMNS --eq-ns 5 --prod-ns 20
 ```
+
+See `docs/cgmd-full-pipeline-zh.md` for the Windows-native `Python 3.12 + gmx.exe 2025.1 CUDA` pipeline architecture and the 6 empirically verified upstream fixes.
 
 ## Repair Sequence (If `ping` Returns `timeout` / `lost`)
 

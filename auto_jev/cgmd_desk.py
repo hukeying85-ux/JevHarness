@@ -479,6 +479,32 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--bridge-port", type=int, default=DEFAULT_BRIDGE_PORT)
     run_p.add_argument("--write-repo", type=Path, help="Optional peer repository checkout to queue inbox/<id>.json")
 
+    scr_p = sub.add_parser("screen", help="Pre-screen an AMP sequence before spending GPU hours")
+    scr_p.add_argument("--sequence", default="GIGKFLHSAKKFGKAFVGEIMNS", help="1-letter amino-acid sequence")
+    scr_p.add_argument("--name", default="magainin2", help="Peptide label")
+    scr_p.add_argument("--ss", default="H", help="Secondary structure hint (H/E/C)")
+
+    prep_p = sub.add_parser("prepare-system", help="Run Stages 1-6 cleanly into a self-contained GROMACS run dir")
+    prep_p.add_argument("--workdir", type=Path, required=True, help="Scratch directory for .gro/.top/.itp/.mdp/.ndx")
+    prep_p.add_argument("--sequence", default="GIGKFLHSAKKFGKAFVGEIMNS", help="1-letter amino-acid sequence")
+    prep_p.add_argument("--name", default="magainin2", help="Peptide label")
+    prep_p.add_argument("--ss", default="H", help="Secondary structure (1-char or per-residue)")
+    prep_p.add_argument("--eq-ns", type=float, default=20.0, help="NPT equilibration length (ns)")
+    prep_p.add_argument("--prod-ns", type=float, default=1000.0, help="Production MD length (ns)")
+    prep_p.add_argument("--martini3-dir", type=Path, help="Optional path to Martini 3 gmx_files directory")
+
+    pipe_p = sub.add_parser("submit-pipeline", help="Screen and dispatch full 12-stage Martini 3 MD to DESKTOP-IEUDGS5")
+    pipe_p.add_argument("--sequence", default="GIGKFLHSAKKFGKAFVGEIMNS", help="1-letter amino-acid sequence")
+    pipe_p.add_argument("--name", default="magainin2", help="Peptide label")
+    pipe_p.add_argument("--ss", default="H", help="Secondary structure (H/E/C)")
+    pipe_p.add_argument("--eq-ns", type=float, default=20.0, help="NPT equilibration length (ns)")
+    pipe_p.add_argument("--prod-ns", type=float, default=100.0, help="Production MD length (ns)")
+    pipe_p.add_argument("--timeout", type=int, default=7200)
+    pipe_p.add_argument("--interval", type=int, default=30)
+    pipe_p.add_argument("--lan-host", default="", help="Optional LAN/Tailscale IP for laptop sub-second bridge")
+    pipe_p.add_argument("--write-repo", type=Path, help="Optional peer repository checkout to queue inbox/<id>.json")
+    pipe_p.add_argument("--force", action="store_true", help="Dispatch even if pre-screen tier is reject_before_gpu")
+
     args = parser.parse_args(argv)
     sync = not args.no_sync
 
@@ -544,6 +570,73 @@ def main(argv: list[str] | None = None) -> int:
             interval=args.interval,
         )
         _print_json(result)
+        return 0 if result.get("status") == "ok" else 6
+
+    if args.command == "screen":
+        from . import cgmd_pipeline
+
+        verdict = cgmd_pipeline.screen_peptide(
+            args.sequence,
+            name=args.name,
+            secondary_structure=args.ss,
+            checkout_dir=args.checkout,
+        )
+        _print_json(verdict)
+        return 0 if verdict["tier"] != "reject_before_gpu" else 6
+
+    if args.command == "prepare-system":
+        from . import cgmd_pipeline
+
+        manifest = cgmd_pipeline.build_martini3_system(
+            args.workdir,
+            sequence=args.sequence,
+            peptide_name=args.name,
+            secondary_structure=args.ss,
+            equilibration_ns=args.eq_ns,
+            production_ns=args.prod_ns,
+            martini3_dir=args.martini3_dir,
+            checkout_dir=args.checkout,
+        )
+        _print_json(manifest)
+        return 0
+
+    if args.command == "submit-pipeline":
+        from . import cgmd_pipeline
+
+        verdict = cgmd_pipeline.screen_peptide(
+            args.sequence,
+            name=args.name,
+            secondary_structure=args.ss,
+            checkout_dir=args.checkout,
+        )
+        if verdict["tier"] == "reject_before_gpu" and not args.force:
+            _print_json({"status": "rejected_by_prescreen", "prescreen": verdict})
+            return 6
+        task_payload = {
+            "schema": "cgmd.task.v1",
+            "sequence": verdict["sequence"],
+            "peptide_name": args.name,
+            "secondary_structure": args.ss.upper()[:1] or "H",
+            "lipids": {"POPE": 3.0, "POPG": 1.0},
+            "box_xy_nm": 12.0,
+            "box_z_nm": 8.0,
+            "salt_m": 0.15,
+            "temperature_k": 310.0,
+            "equilibration_ns": args.eq_ns,
+            "production_ns": args.prod_ns,
+            "gpu_id": "0",
+        }
+        result = dispatch_job(
+            "pipeline",
+            task_payload,
+            checkout_dir=args.checkout,
+            write_repo=args.write_repo,
+            lan_host=args.lan_host,
+            note=f"pipeline:{args.name}:{args.prod_ns}ns",
+            timeout=args.timeout,
+            interval=args.interval,
+        )
+        _print_json({"prescreen": verdict, "result": result})
         return 0 if result.get("status") == "ok" else 6
 
     parser.print_help()
