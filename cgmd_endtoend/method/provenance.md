@@ -74,3 +74,16 @@ python3 build_onepot.py --cg peptide_cg.pdb --box 7.5 --copies 6 --seed 20261030
 
 统一参数（文档 §12）：Verlet 邻区、`reaction-field` εr = 15、rcoulomb = rvdw = 1.1 nm、
 `cutoff` + `Potential-shift`、nstlist 20、dt 20 fs。
+
+## 5. 第二轮补充（同日）：重复种子、敏感性、桌面端基准
+
+| 内容 | 输入 | 命令 | 实测 |
+|---|---|---|---|
+| A 臂独立种子 | 7.5 nm / 6 拷贝 / seed 20261031、20261032 | `bash scripts/run_seeds.sh A 7.5 30 20261031 20261032` | 各 30 ns，**6421.7 / 6145.6 ns/day**（干净 2 线程） |
+| B 臂独立种子 | 9.5 nm / 6 拷贝 / seed 20261031、20261032 | `bash scripts/run_seeds.sh B 9.5 30 20261031 20261032` | 各 30 ns，**3540.1 / 3517.8 ns/day** |
+| 敏感性变体 | 同一肽，`martinize2` **不加 `-elastic`**（18 珠不变） | `bash scripts/sensitivity.sh` | 30 ns，6335.3 ns/day |
+| 桌面端 Martini 基准 | 桌面既有 `cgmd_100ns_prod.tpr`（9346 珠膜体系） | 信箱 `gmx` 工单 `20261030T072114-5eb3` / `20261030T072342-5db6` | 500 ps：4×12 → **708.2**；1×12 → **3323.2** ns/day |
+
+> 说明：第一轮 A 臂 100 ns 记录到 3339.7 ns/day、B 臂 50 ns 记录到 1669.0 ns/day，
+> 这两次都在**同时跑分析脚本**（2 核机上另一个 CPU 密集进程）的情况下测得；
+> 第二轮干净复跑分别是 ~6400 与 ~3500 ns/day，约快 1.9–2.1×。以后报性能请用干净数。
