@@ -37,7 +37,7 @@
 | `search` | 在给定根目录里找最近跑过的肽体系（`.gro` + `.top/.tpr`），并**从 .gro 还原序列** |
 | `ff` | 取 Martini 3 力场：先 `pip install martini-forcefields`，再退回 `codeload` 下载，缓存到 `%USERPROFILE%\cgmd-runs\martini3` |
 | `build` | 序列 → 主链 Martini 3 弹性网络体系（.gro/.itp/.top/.mdp） |
-| `run` | EM → NPT 平衡 → 生产（原生 gmx + GPU），报 ns/day、起止 Rg、接触簇 |
+| `run` | EM → NPT 平衡 → 生产（原生 gmx + GPU），报 ns/day、起止 Rg、接触簇；`resume: true` 走 `-cpi/-append` 续跑，所以 100 ns 能按 1 h 一格切开 |
 | `all` | `search` → `build` → `run` 一条龙 |
 
 模型口径写死并会出现在报告里，不许含糊：

@@ -1,4 +1,4 @@
-From 2d277c2a35388c4d70d1bfb15135239193bc3b5b Mon Sep 17 00:00:00 2001
+From 32f560716ba8f3bbc6e7a74dca46937981ba5162 Mon Sep 17 00:00:00 2001
 From: CGMD-Agent <agent@users.noreply.github.com>
 Date: Fri, 30 Oct 2026 02:19:25 +0000
 Subject: [PATCH] mailbox: add a cgmd job kind so coarse-grained runs need no
@@ -24,20 +24,20 @@ desk: only the summary JSON travels back.
 
 tests/test_cgmd_desk_ops.py covers the parts that do not need GROMACS.
 ---
- code/cgmd/desk_ops.py                         | 1151 +++++++++++++++++
+ code/cgmd/desk_ops.py                         | 1158 +++++++++++++++++
  core/hub_mailbox.py                           |    3 +-
  skills/cgmd-hub/runner/Invoke-CgmdMailbox.ps1 |   71 +
  tests/test_cgmd_desk_ops.py                   |  117 ++
- 4 files changed, 1341 insertions(+), 1 deletion(-)
+ 4 files changed, 1348 insertions(+), 1 deletion(-)
  create mode 100644 code/cgmd/desk_ops.py
  create mode 100644 tests/test_cgmd_desk_ops.py
 
 diff --git a/code/cgmd/desk_ops.py b/code/cgmd/desk_ops.py
 new file mode 100644
-index 0000000..0381540
+index 0000000..b9b68d8
 --- /dev/null
 +++ b/code/cgmd/desk_ops.py
-@@ -0,0 +1,1151 @@
+@@ -0,0 +1,1158 @@
 +"""Desk-side operations behind the mailbox ``cgmd`` job kind.
 +
 +Why this file exists
@@ -1056,7 +1056,14 @@ index 0000000..0381540
 +        return "fail", "mdrun-eq failed (exit {})".format(entry["returncode"]), {
 +            "workdir": workdir, "stages": stages}
 +    budget = int(args.get("prod_timeout") or 2400)
-+    entry = stage("mdrun-prod-gpu", ["mdrun", "-deffnm", "prod"] + gmx_args, timeout=budget)
++    # A 100 ns production run outlives one job slice, so a later job can pick
++    # the run up where the checkpoint left it instead of starting over.
++    prod_argv = ["mdrun", "-deffnm", "prod"]
++    resumed = bool(args.get("resume")) and os.path.isfile(os.path.join(workdir, "prod.cpt"))
++    if resumed:
++        prod_argv += ["-cpi", "prod.cpt", "-append"]
++    entry = stage("mdrun-prod-gpu", prod_argv + gmx_args, timeout=budget)
++    entry["resumed"] = resumed
 +    if entry["returncode"] != 0:
 +        return "fail", "mdrun-prod failed (exit {})".format(entry["returncode"]), {
 +            "workdir": workdir, "stages": stages}
