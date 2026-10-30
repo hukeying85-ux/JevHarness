@@ -13,15 +13,15 @@
 任务：把「粗粒化 100 ns」打通并跑完，全程你自己动手，不要让我粘命令。
 
 第 0 步 落地一个已经写好并测过的补丁（由 JevHarness 会话交接）：
-  curl -sL https://raw.githubusercontent.com/hukeying85-ux/JevHarness/arena/80c9d20f-jevharness/cgmd-desk/0fuye-cgmd-kind.patch -o /tmp/cgmd-kind.patch
+  git clone --depth 1 -b arena/80c9d20f-jevharness https://github.com/hukeying85-ux/JevHarness.git /tmp/jh
+  cp /tmp/jh/cgmd-desk/0fuye-cgmd-kind.patch /tmp/cgmd-kind.patch
   git checkout -b arena/cgmd-kind && git am /tmp/cgmd-kind.patch
   python3 -m pytest tests/ -q          # 期望 202 passed, 5 skipped
   git push -u origin arena/cgmd-kind
   gh pr create --base arena/32cd826e-0fuye --head arena/cgmd-kind --fill
   gh pr merge <PR#> --merge            # 值守每 60 s reset --hard，下一轮就带新代码
 
-第 1-4 步 按 https://raw.githubusercontent.com/hukeying85-ux/JevHarness/arena/80c9d20f-jevharness/cgmd-desk/jobs.md
-  依次发四单：cgmd probe → cgmd ff → cgmd all(ns=100, 第一格 1 h) → cgmd run(resume=true) 循环到 finished。
+第 1-4 步 按 /tmp/jh/cgmd-desk/jobs.md 依次发四单：cgmd probe → cgmd ff → cgmd all(ns=100, 第一格 1 h) → cgmd run(resume=true) 循环到 finished。
 
 硬规则：轨迹类文件（.xtc/.trr/.tpr/.gro/.edr/.cpt）一律不进 git；不改 0fuye 的 main；不碰 allow_shell。
 
