@@ -1,0 +1,62 @@
+{
+  "schema": "cgmd.martini.onepot.comparison.v1",
+  "arms": {
+    "A_21mM": {
+      "box_nm": 7.774,
+      "concentration_mM": 21.0,
+      "window_ns": [
+        0.0,
+        50.0
+      ],
+      "frames": 51,
+      "rg_mean_nm": 0.666
+    },
+    "B_10.6mM": {
+      "box_nm": 9.785,
+      "concentration_mM": 10.6,
+      "window_ns": [
+        0.0,
+        50.0
+      ],
+      "frames": 51,
+      "rg_mean_nm": 0.664
+    }
+  },
+  "oligomer_metrics": {
+    "largest_cluster_mean": {
+      "A_21mM": 1.686,
+      "B_10.6mM": 1.196,
+      "ratio_A_21mM_over_B_10.6mM": 1.41
+    },
+    "largest_cluster_max": {
+      "A_21mM": 4,
+      "B_10.6mM": 3,
+      "ratio_A_21mM_over_B_10.6mM": 1.333
+    },
+    "P_largest_cluster_ge2": {
+      "A_21mM": 0.51,
+      "B_10.6mM": 0.176,
+      "ratio_A_21mM_over_B_10.6mM": 2.898
+    },
+    "P_largest_cluster_ge3": {
+      "A_21mM": 0.137,
+      "B_10.6mM": 0.02,
+      "ratio_A_21mM_over_B_10.6mM": 6.85
+    },
+    "P_largest_cluster_ge4": {
+      "A_21mM": 0.039,
+      "B_10.6mM": 0.0
+    },
+    "mean_inter_copy_contacts": {
+      "A_21mM": 5.882,
+      "B_10.6mM": 1.431,
+      "ratio_A_21mM_over_B_10.6mM": 4.11
+    },
+    "any_pair_contact_fraction": {
+      "A_21mM": 0.733,
+      "B_10.6mM": 0.533,
+      "ratio_A_21mM_over_B_10.6mM": 1.375
+    }
+  },
+  "note": "CG 端点只用于相对比较（文档 §9）：不得把 CG 时间或簇概率读成真实 Aβ fibrillation 速率；单种子单轨迹不含误差棒。"
+}
