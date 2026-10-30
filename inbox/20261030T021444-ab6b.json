@@ -1,0 +1,11 @@
+{
+  "args": {},
+  "created_at": "2026-10-30T02:14:44+0000",
+  "from": "user",
+  "host": "e2b.local",
+  "id": "20261030T021444-ab6b",
+  "kind": "selfcheck",
+  "note": "",
+  "schema": "cgmd.mailbox.request.v1",
+  "timeout_s": 900
+}
