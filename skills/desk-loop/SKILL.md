@@ -142,7 +142,8 @@ python3 skills/desk-loop/deskloop.py loop --kind cgmd --rounds 2 \
 | `doctor`（probe 工单） | `20261102T013929-5019` → gmx 2025.1 CUDA 12.8 / py 3.12.10 / martini3 found |
 | `build`（从序列建体系） | `20261102T014012-224b` → YLSLLQR 1309 珠 / 5.3 nm（1275 W + 13 NA + 14 CL），1.1 s |
 | `run` 分片续算 | 12 ns 三分片 `…12816-1996` / `…13020-9770` / `…13225-667a` → 7053 / 5486 / 7200 ns/day，累计 4→8→12 ns 全部 `Finished mdrun` |
-| 100 ns 生产 | 见 `results/desktop/md_YLSLLQR_*.json` 与 `results/sync/loop_receipt.md` |
+| **100 ns 生产（完整成功）** | 两片：`20261102T014115-cf33`（50 ns @ 6718.51 ns/day）+ `20261102T015308-01d4`（累计 100 ns @ 5814.27 ns/day），5,000,000 步、`Finished mdrun`、0 LINCS、Rg 0.666 → 0.627 nm → `results/desktop/md_YLSLLQR_20261102-020641.json` |
+| `loop`（发单→等→判） | `20261102T020731-cadb` → 1 轮 ok，criteria passed（`results/sync/loop_receipt.md`） |
 | `criteria` | 未跑满时不通过（exit 2）、跑满且 `finished=true` 时通过（exit 0）——两个方向都验过 |
 | `gate` | `gate.py` 4 项全过；故意放进 `*.xtc` 会被拒 |
 
