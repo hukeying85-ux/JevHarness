@@ -1,10 +1,10 @@
 # sync receipt
 
-- at: 2026-11-02T03:14:08
+- at: 2026-11-02T03:14:30
 - branch: arena/03860148-jevharness
-- head: ac718a5
-- message: docs: advisor report - problem list + methodological difficulties (2026-11-02)
-- push: failed
+- head: 1a1c195
+- message: docs: advisor report (problem list + methodological difficulties); sync: commit receipt with the same head
+- push: ok
 - criteria: passed
   - [PASS] require_files:results/desktop/md_*.json (1 hit(s))
   - [PASS] forbid_files:results/desktop/*.xtc (0 hit(s))
