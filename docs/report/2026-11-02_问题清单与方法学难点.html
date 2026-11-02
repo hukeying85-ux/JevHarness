@@ -1,0 +1,104 @@
+<html><head><meta charset="utf-8"><style>body{font-family:Arial,"Microsoft YaHei",sans-serif;font-size:11pt;line-height:1.5}table{border-collapse:collapse;margin:8px 0}th,td{border:1px solid #999;padding:5px 7px;vertical-align:top;font-size:10pt}code{background:#f4f4f4;padding:1px 3px}</style></head><body><h1>CGMD 项目汇报：主要问题清单与方法学难点</h1>
+<blockquote style="color:#555;border-left:3px solid #ccc;margin-left:0;padding-left:10px">对象：导师汇报 · 日期：2026-11-02 · 分支 <code>arena/03860148-jevharness</code></blockquote>
+<blockquote style="color:#555;border-left:3px solid #ccc;margin-left:0;padding-left:10px">口径：本文数字<strong>全部为本次实测</strong>，未实测处一律标「未验证」。</blockquote>
+<blockquote style="color:#555;border-left:3px solid #ccc;margin-left:0;padding-left:10px">对应证据：<code>cgmd_endtoend/README.md</code>、<code>results/desktop/</code>、<code>results/sync/</code>、<code>skills/</code></blockquote>
+<hr/>
+<h2>0. 一页速览</h2>
+<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
+<tr><th style="background:#f2f2f2;text-align:left">维度</th><th style="background:#f2f2f2;text-align:left">结论</th></tr>
+<tr><td>通路</td><td>Arena 沙箱 ⇄ 台式机 <code>DESKTOP-IEUDGS5</code> 已打通；<strong>不靠远程 shell</strong>，靠 git 信箱（60 s 轮询）传结构化 JSON 工单</td></tr>
+<tr><td>桌面算力</td><td>原生 GROMACS 2025.1 + CUDA 12.8 + RTX A4000；Martini 3 实测 <strong>3323 ns/day</strong>（正确线程布局）；最近一次 100 ns 生产 <strong>5814 ns/day</strong></td></tr>
+<tr><td>科学结果</td><td>21.0 mM（A 臂）vs 10.6 mM（B 臂），n = 3：<strong>方向一致但幅度不显著</strong>（P(≥2) P 值不显著，Welch t ≈ 1.5）</td></tr>
+<tr><td>最大方法学风险</td><td>①弹性网络抑制解离（P(≥3) 0.097 → 0.226，去掉网络后翻倍）②桌面 builder 单拷贝、仅 backbone，无法做浓度臂③n = 3 不足以区分浓度效应与轨迹涨落</td></tr>
+<tr><td>工程产出</td><td><code>skills/cgmd-desktop</code>（发单/重试/回执）+ <code>skills/desk-loop</code>（发单→等→判成功→回推，一条命令闭环）</td></tr>
+</table><p></p>
+<hr/>
+<h2>1. 主要问题清单</h2>
+<h3>A 类 · 通路与工程（已解决，保留备查）</h3>
+<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
+<tr><th style="background:#f2f2f2;text-align:left">#</th><th style="background:#f2f2f2;text-align:left">现象</th><th style="background:#f2f2f2;text-align:left">根因</th><th style="background:#f2f2f2;text-align:left">处理</th><th style="background:#f2f2f2;text-align:left">状态</th></tr>
+<tr><td>A1</td><td>沙箱访问不到台式机 <code>:8765</code> 桥（192.168.x.x / 100.84.x.x 全部超时）</td><td>沙箱出网白名单只放行 github / pypi / npm / codeload</td><td>放弃直连，改走 <strong>git 信箱总线</strong>（<code>hub/mailbox</code> 的 <code>inbox/</code>→<code>outbox/</code>）</td><td>已解决</td></tr>
+<tr><td>A2</td><td>用户给的 Arena 会话链接打不开</td><td>需登录，沙箱无凭据</td><td>改用公开 GitHub 仓库做协议载体</td><td>已解决</td></tr>
+<tr><td>A3</td><td><code>git push</code> 到 0fuye 仓库 403</td><td>该仓库只读；clone 不带 <code>-b</code> 会落到 main</td><td>只读克隆（<code>-b arena/32cd826e-0fuye</code>），永不写它</td><td>已解决（约定）</td></tr>
+<tr><td>A4</td><td><code>--kind shell</code> 被拒、<code>pipeline</code> unsupported、<code>smoke</code> 只跑 SPC 水盒</td><td>台式机 <code>allow_shell=false</code>，安全门禁设计如此</td><td>新增 <code>cgmd</code> 结构化 JSON 工单（固定脚本 + 参数，不开 shell），<code>code/cgmd/desk_ops.py</code> 执行</td><td>已解决</td></tr>
+<tr><td>A5</td><td>发出去的工单「没反应」</td><td>信箱固定 <strong>60 s 一轮</strong>；只认 <code>origin/hub/mailbox:outbox/&lt;id&gt;.json</code>；台账按 payload 去重</td><td>轮询节奏按 60 s 计；超时重试必须 <code>force=True</code> 绕过去重；<code>fail</code>/<code>unsupported</code> 不重发</td><td>已解决</td></tr>
+<tr><td>A6</td><td>报错「build did not report a workdir」但台式机其实建成了</td><td>回执里是 Windows 路径 <code>C:\...</code>，Linux 的 <code>os.path.dirname</code> 对 <code>\</code> 返回空</td><td>改用 <code>ntpath.dirname</code></td><td>已解决</td></tr>
+<tr><td>A7</td><td>沙箱 <code>.git</code> 两次被重置回基线提交</td><td>平台行为</td><td>写了 <code>deskloop.py recover</code>：保留 <code>skills/ results/ cgmd_endtoend/ README.md</code> 后对齐远端再回填</td><td>已解决</td></tr>
+<tr><td>A8</td><td>长轨迹跑到一半被截断</td><td>台式机 <code>MaxJobSeconds</code> 会截断 <code>timeout_s</code>（run 默认 <code>prod_timeout = 2400 s</code>）</td><td>分片 + <code>prod.cpt</code> 续算；<code>nsteps</code> 按<strong>累计</strong>目标重写</td><td>已解决（这是长跑的唯一可行路径）</td></tr>
+<tr><td>A9</td><td>桌面 <code>grompp</code> 直接崩 <code>0xC0000005</code></td><td>Windows 版 grompp 对含 <code>#include</code> 的 <code>.top</code> 处理有缺陷</td><td><code>scripts/flatten_top.py</code> 展平成自包含 top；用 <code>gmx dump</code> 验证等价性：<strong>10,790 行仅 4 行差异</strong>（版本行/注释）</td><td>已解决，已验证不改物理</td></tr>
+<tr><td>A10</td><td>台式机 GPU 跑 Martini 3 只有 708 ns/day，低得反常</td><td>hub 默认 <strong>4 tMPI × 12 OMP</strong>，小体系被 MPI 通信吃光</td><td>改 <code>-ntmpi 1 -ntomp 12</code> → <strong>3323.2 ns/day（4.7×）</strong></td><td>已解决</td></tr>
+<tr><td>A11</td><td>台式机缺 <code>martini_v3.0.0.itp</code> / vermouth / martinize2</td><td>只在沙箱装了</td><td>台式机用 <code>how=cache</code> 复用已缓存拓扑；需要新建模时在沙箱建好再投料</td><td>已解决（有边界，见 B1）</td></tr>
+</table><p></p>
+<h3>B 类 · 建模与物理（部分解决，见第 2 节展开）</h3>
+<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
+<tr><th style="background:#f2f2f2;text-align:left">#</th><th style="background:#f2f2f2;text-align:left">现象</th><th style="background:#f2f2f2;text-align:left">影响</th><th style="background:#f2f2f2;text-align:left">现状</th></tr>
+<tr><td>B1</td><td>桌面 builder 只支持 <strong>backbone-only、单拷贝</strong></td><td>桌面能测的是<strong>单链塌缩（Rg）</strong>，无法复刻双浓度寡聚化臂</td><td>已明确划界；科学结论仍来自沙箱全 Martini 3 双浓度臂</td></tr>
+<tr><td>B2</td><td>弹性网络（elastic network）人为维持肽内接触</td><td>显著抑制解离：P(≥3) <strong>0.097 → 0.226</strong>、最大簇 1.527 → 1.613、接触 3.29 → 5.10</td><td>已量化，作为敏感性分析写入</td></tr>
+<tr><td>B3</td><td>Martini 3 全原子映射 vs backbone-only 弹性网络</td><td>两套模型<strong>不可直接比较</strong></td><td>已在文中分列，不合并统计</td></tr>
+<tr><td>B4</td><td>6 拷贝体系的簇统计量稀疏</td><td>单体 481 / 二聚 49 / 三聚 5 / 四聚 3（101 帧）</td><td>用四指标并列 + 误差棒缓解，非根除</td></tr>
+<tr><td>B5</td><td>盒子有限尺寸 / 周期像自相互作用</td><td>浓度臂的定量可信度</td><td><strong>未做有限尺寸外推（未验证）</strong></td></tr>
+<tr><td>B6</td><td>采样量：n = 3，30 ns 窗口</td><td>浓度效应与轨迹涨落分不开（P(≥2) Welch t ≈ 1.5）</td><td>已如实降级表述；需加长或加种子</td></tr>
+</table><p></p>
+<hr/>
+<h2>2. 方法学上比较困难的点（建议重点讨论）</h2>
+<h3>难点 1 · 浓度臂设计与体系规模的两难</h3>
+<p>要做「浓度翻倍是否促进寡聚」，需要同时满足：足够多的拷贝数（统计）、足够小的盒子（算力）、足够长的轨迹（平衡）。</p>
+<p>三者互相挤压。当前选择：A 臂 21.0 mM / 6 拷贝 / 4007 珠，B 臂 10.6 mM / 6 拷贝 / 7915 珠（更大盒子稀释）。</p>
+<p>代价是 B 臂每个珠子的邻居更少，簇事件本身稀疏（P(≥3)=0.011）。</p>
+<p><strong>未做的</strong>：不同盒子尺寸的同浓度对照（有限尺寸外推）、拷贝数 12/24 的收敛性检验。</p>
+<h3>难点 2 · 弹性网络对「解离」这类过程的系统性偏差（最需要交代的一条）</h3>
+<p>Martini 3 里常用弹性网络保持三级结构，但它的物理含义是<strong>给肽内/肽间接触加谐振约束</strong>。</p>
+<p>对「寡聚化」这种本质上由接触生灭决定的过程，这等于人为降低了<strong>解离速率</strong>：</p>
+<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
+<tr><th style="background:#f2f2f2;text-align:left">指标</th><th style="background:#f2f2f2;text-align:left">有弹性网络（A 臂）</th><th style="background:#f2f2f2;text-align:left">去掉弹性网络</th><th style="background:#f2f2f2;text-align:left">变化</th></tr>
+<tr><td>P(最大簇 ≥ 3)</td><td>0.097 ± 0.032</td><td><strong>0.226</strong></td><td>2.3×</td></tr>
+<tr><td>最大簇均值</td><td>1.527 ± 0.067</td><td>1.613</td><td>+6%</td></tr>
+<tr><td>平均跨肽接触</td><td>3.29 ± 1.02</td><td><strong>5.10</strong></td><td>1.6×</td></tr>
+<tr><td>Rg (nm)</td><td>0.659 ± 0.009</td><td>0.669</td><td>轻微伸展</td></tr>
+</table><p></p>
+<p>也就是说：<strong>链刚度的影响大于浓度的影响</strong>（浓度效应只有 1.4×，模型效应 2.3×）。</p>
+<p>这意味着任何「聚集倾向」的绝对值都不可跨模型引用，只能做<strong>同模型内的相对比较</strong>。</p>
+<h3>难点 3 · 寡聚化序参量的定义不唯一</h3>
+<p>「有没有聚集」可以由至少四个量描述，它们不总是一致：</p>
+<ul>
+<li>P(最大簇 ≥ 2) / ≥ 3 / ≥ 4 —— 对阈值敏感（0.419 vs 0.097 vs 0.011）</li>
+<li>最大簇均值 —— 对单个瞬态事件不敏感，但压缩了尾部</li>
+<li>平均跨肽接触对数 —— 连续量，涨落大（SD 达均值的 30%）</li>
+<li>末帧最大簇 —— 最直观，但<strong>单帧统计</strong>，最不可靠（末帧 A=2、B=1）</li>
+</ul>
+<p>领域内没有统一标准，所以本文采取「四指标并列 + 每指标 n = 3 误差棒」，并明确禁止用单帧做结论。</p>
+<h3>难点 4 · 误差棒与显著性：n = 3 的诚实边界</h3>
+<ul>
+<li>A/B 的 P(≥2) 差（0.12）<strong>小于</strong>两臂各自的种子间 SD（0.112 / 0.081）→ 不显著（Welch t ≈ 1.5）</li>
+<li>P(≥3)（t ≈ 4.0）与最大簇均值（t ≈ 3.9）方向上稳健，但 n = 3 的自由度只有 4，t 检验本身很脆</li>
+<li>早期单条 50 ns 轨迹给出的 A/B = 2.9× 被 n = 3 修正到 <strong>1.4×</strong>——这是本轮最重要的一次自我纠错</li>
+</ul>
+<p><strong>成本估算</strong>：纯 GPU 约 7200 ns/day，30 ns ≈ 6 min/种子，但受 60 s 工单节拍与排队限制，</p>
+<p>实际每种子约 10–15 min。要 5 倍统计量（n = 15 或 150 ns/种子）大约需要 8–12 h 墙钟，可承受。</p>
+<h3>难点 5 · 时间尺度映射与收敛判据</h3>
+<p>Martini 的平滑势能面使有效扩散系数偏大，通常用 2–4× 的经验放大因子换算真实时间，但<strong>本工作没有做标定（未验证）</strong>。</p>
+<p>同时，Rg 从 0.666 → 0.627 nm（100 ns，桌面单链）仍在缓慢漂移，</p>
+<p><strong>未做块平均 / 自相关时间估计</strong>，因此「是否平衡」目前只有目视判断。</p>
+<h3>难点 6 · 跨平台可复现性</h3>
+<p>同一体系在沙箱 CPU（6421.7 ns/day，4007 珠）与桌面 GPU（6718.5 / 5814.3 ns/day）都跑通，</p>
+<p>但两者 GROMACS 构建、精度设置、并行分解不同，<strong>未做逐帧位级比对</strong>；</p>
+<p>只验证了热力学量级一致（Rg 0.66 → 0.63，簇概率同量级）。</p>
+<h3>难点 7 · 「跑通」与「跑对」的区分（工程 vs 科学）</h3>
+<p>桌面 100 ns 的意义是<strong>验证通路与算力</strong>（129 珠级的单链塌缩），不是复现寡聚化结论。</p>
+<p>这一点必须在汇报里讲清楚，否则容易被读成「台式机也复现了浓度效应」——<strong>并没有</strong>。</p>
+<hr/>
+<h2>3. 给导师的三句话</h2>
+<p>1. <strong>通路问题已彻底解决</strong>：不需要远程桌面、不需要人在机器上敲命令，代理自行完成发单→执行→取回→判定成功，并可被新会话一键复现。</p>
+<p>2. <strong>科学结论目前是「方向一致、幅度不显著」</strong>：浓度翻倍确实让簇概率与跨肽接触上升（P(≥3) t ≈ 4.0），但 P(≥2) 的差异淹没在种子间涨落里。</p>
+<p>3. <strong>最该先补的实验</strong>：同一模型下把 n 提到 ≥ 10，并做一次「无弹性网络 + 双浓度」的完整对照，才能把模型效应和浓度效应分开。</p>
+<hr/>
+<h2>4. 证据索引</h2>
+<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
+<tr><th style="background:#f2f2f2;text-align:left">内容</th><th style="background:#f2f2f2;text-align:left">路径</th></tr>
+<tr><td>端到端验收 + 双浓度臂 + 重复种子 + 敏感性</td><td><code>cgmd_endtoend/README.md</code>（§1–§5）</td></tr>
+<tr><td>桌面 100 ns manifest（完整成功）</td><td><code>results/desktop/md_YLSLLQR_20261102-020641.json</code></td></tr>
+<tr><td>桌面逐工单回执（probe/build/run/ping）</td><td><code>results/desktop/2026*.json</code>、<code>skills/cgmd-desktop/evidence/</code></td></tr>
+<tr><td>闭环与同步回执</td><td><code>results/sync/last_sync.md</code>、<code>results/sync/loop_receipt.md</code></td></tr>
+<tr><td>通路与闭环说明</td><td><code>skills/cgmd-desktop/SKILL.md</code>、<code>skills/desk-loop/SKILL.md</code></td></tr>
+<tr><td>桌面端全部结果文件绝对路径</td><td><code>cgmd_endtoend/README.md</code> §4.4</td></tr>
+</table><p></p></body></html>
