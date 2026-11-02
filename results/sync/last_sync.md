@@ -1,10 +1,10 @@
 # sync receipt
 
-- at: 2026-11-02T02:08:17
+- at: 2026-11-02T03:14:08
 - branch: arena/03860148-jevharness
-- head: 6fe0b81
-- message: desk-loop: 100 ns CG MD on the desk GPU, closed loop verified
-- push: ok
+- head: ac718a5
+- message: docs: advisor report - problem list + methodological difficulties (2026-11-02)
+- push: failed
 - criteria: passed
   - [PASS] require_files:results/desktop/md_*.json (1 hit(s))
   - [PASS] forbid_files:results/desktop/*.xtc (0 hit(s))

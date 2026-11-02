@@ -344,6 +344,15 @@ def cmd_sync(cfg: Dict[str, Any], args) -> int:
         fh.write("- criteria: %s\n" % criteria["status"])
         for check in criteria["checks"]:
             fh.write("  - [%s] %s (%s)\n" % ("PASS" if check["ok"] else "FAIL", check["check"], check["detail"]))
+    # the receipt must describe THIS head, so it is committed (and pushed) right
+    # after the main commit instead of lagging one sync behind
+    if push == EXIT_PASS and git(["status", "--porcelain", "--", os.path.relpath(receipt, REPO)]).stdout.strip():
+        git(["add", os.path.relpath(receipt, REPO)], check=True)
+        git(["commit", "-m", "chore(sync): receipt for %s" % head], check=True)
+        head = git(["rev-parse", "--short", "HEAD"]).stdout.strip()
+        g = git(["push", cfg.get("remote", "origin"), branch])
+        push = EXIT_PASS if g.returncode == 0 else EXIT_FAIL
+
     print(json.dumps({"branch": branch, "head": head, "push": push == EXIT_PASS,
                       "criteria": criteria["status"], "receipt": os.path.relpath(receipt, REPO)},
                      indent=2, ensure_ascii=False))
