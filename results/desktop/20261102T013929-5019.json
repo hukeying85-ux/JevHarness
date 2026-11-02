@@ -1,0 +1,115 @@
+{
+  "detail": {
+    "exit_code": 0,
+    "mode": "probe",
+    "ops": {
+      "detail": {
+        "cwd": "C:\\cgmd\\0fuye",
+        "drives": [
+          "C:\\",
+          "F:\\"
+        ],
+        "ff_molecules": [],
+        "gmx": {
+          "cuda_runtime": "12.80",
+          "gpu_support": "CUDA",
+          "how": "PATH",
+          "path": "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+          "version": "2025.1"
+        },
+        "host": "DESKTOP-IEUDGS5",
+        "martini": {
+          "dir": "C:\\Users\\BNI\\cgmd-runs\\martini3\\martini-forcefields-main\\martini_forcefields\\regular\\v3.0.0\\gmx_files",
+          "file": "C:\\Users\\BNI\\cgmd-runs\\martini3\\martini-forcefields-main\\martini_forcefields\\regular\\v3.0.0\\gmx_files\\martini_v3.0.0.itp",
+          "how": "cache"
+        },
+        "platform": "Windows-10-10.0.19045-SP0",
+        "pythons": [
+          {
+            "args": [],
+            "exe": "C:\\Users\\BNI\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "how": "running",
+            "pip": true,
+            "version": "3.12.10"
+          },
+          {
+            "args": [
+              "-3"
+            ],
+            "exe": "C:\\WINDOWS\\py.exe",
+            "how": "py-launcher",
+            "pip": true,
+            "version": "3.12.10"
+          },
+          {
+            "args": [],
+            "exe": "C:\\Users\\BNI\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
+            "how": "glob",
+            "pip": true,
+            "version": "3.7.3"
+          },
+          {
+            "args": [],
+            "exe": "C:\\Python32\\python.exe",
+            "how": "PATH",
+            "pip": false,
+            "version": "3.2.2"
+          }
+        ]
+      },
+      "generated_at": "2026-11-02T09:40:01",
+      "host": "DESKTOP-IEUDGS5",
+      "mode": "probe",
+      "python": "3.12.10",
+      "schema": "cgmd.desk_ops.v1",
+      "seconds": 2.72,
+      "status": "ok",
+      "summary": "gmx 2025.1 | python 3.12.10 | martini3 found"
+    },
+    "python": "C:\\Users\\BNI\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
+  },
+  "finished_at": "2026-11-02T09:40:01+08:00",
+  "id": "20261102T013929-5019",
+  "kind": "cgmd",
+  "logs_tail": [
+    "        \"pip\": true",
+    "      },",
+    "      {",
+    "        \"exe\": \"C:\\\\Users\\\\BNI\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python37\\\\python.exe\",",
+    "        \"args\": [],",
+    "        \"version\": \"3.7.3\",",
+    "        \"how\": \"glob\",",
+    "        \"pip\": true",
+    "      },",
+    "      {",
+    "        \"exe\": \"C:\\\\Python32\\\\python.exe\",",
+    "        \"args\": [],",
+    "        \"version\": \"3.2.2\",",
+    "        \"how\": \"PATH\",",
+    "        \"pip\": false",
+    "      }",
+    "    ],",
+    "    \"martini\": {",
+    "      \"dir\": \"C:\\\\Users\\\\BNI\\\\cgmd-runs\\\\martini3\\\\martini-forcefields-main\\\\martini_forcefields\\\\regular\\\\v3.0.0\\\\gmx_files\",",
+    "      \"file\": \"C:\\\\Users\\\\BNI\\\\cgmd-runs\\\\martini3\\\\martini-forcefields-main\\\\martini_forcefields\\\\regular\\\\v3.0.0\\\\gmx_files\\\\martini_v3.0.0.itp\",",
+    "      \"how\": \"cache\"",
+    "    },",
+    "    \"ff_molecules\": []",
+    "  },",
+    "  \"generated_at\": \"2026-11-02T09:40:01\",",
+    "  \"seconds\": 2.72,",
+    "  \"python\": \"3.12.10\",",
+    "  \"host\": \"DESKTOP-IEUDGS5\"",
+    "}",
+    "CGMD_EXIT_CODE=0 "
+  ],
+  "note": "agent doctor",
+  "peer": "hukeying85-ux/JevHarness",
+  "requested_by": "user",
+  "schema": "cgmd.mailbox.result.v1",
+  "seconds": 3.54,
+  "started_at": "2026-11-02T09:39:57+08:00",
+  "status": "ok",
+  "summary": "cgmd probe: gmx 2025.1 | python 3.12.10 | martini3 found",
+  "worker": "DESKTOP-IEUDGS5"
+}

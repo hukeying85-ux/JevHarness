@@ -1,0 +1,16 @@
+{
+  "description": "台式机 CG MD 完整成功：最新 manifest 必须是 ok、跑满目标 ns、有 Performance、无 LINCS 警告",
+  "require_files": [
+    "results/desktop/md_*.json"
+  ],
+  "forbid_files": [
+    "results/desktop/*.xtc",
+    "results/desktop/*.tpr"
+  ],
+  "require_json": [
+    { "glob": "results/desktop/md_*.json", "field": "status", "equals": "ok" },
+    { "glob": "results/desktop/md_*.json", "field": "target_ns", "min": 1 },
+    { "glob": "results/desktop/md_*.json", "field": "performance_ns_per_day", "min": 100 },
+    { "glob": "results/desktop/md_*.json", "field": "final_report.finished", "equals": true }
+  ]
+}
