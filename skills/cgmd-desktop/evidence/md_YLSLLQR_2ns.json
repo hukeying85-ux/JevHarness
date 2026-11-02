@@ -1,0 +1,129 @@
+{
+  "box_nm": null,
+  "capabilities": {
+    "checked_at": "2026-11-02T01:23:08",
+    "cuda_runtime": "12.80",
+    "drives": [
+      "C:\\",
+      "F:\\"
+    ],
+    "gmx": "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+    "gmx_gpu": "CUDA",
+    "gmx_version": "2025.1",
+    "host": "DESKTOP-IEUDGS5",
+    "martini_dir": "C:\\Users\\BNI\\cgmd-runs\\martini3\\martini-forcefields-main\\martini_forcefields\\regular\\v3.0.0\\gmx_files",
+    "martini_how": "cache",
+    "probe_job": "20261102T012245-2093",
+    "probe_status": "ok",
+    "probe_summary": "cgmd probe: gmx 2025.1 | python 3.12.10 | martini3 found",
+    "python": "C:\\Users\\BNI\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "workstation_online": true
+  },
+  "done_ns": 2.0,
+  "final_report": {
+    "accelerator": "gpu",
+    "finished": true,
+    "gmx": "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+    "gmx_how": "PATH",
+    "log_tail": [
+      " Wait GPU NB local         1    4     100001       0.695          6.643   2.2",
+      " Wait GPU state copy       1    4     242003      10.119         96.727  31.6",
+      " NB X/F buffer ops.        1    4       4001       0.081          0.775   0.3",
+      " Write traj.               1    4         21       0.016          0.152   0.0",
+      " GPU constr. setup         1    4          1       0.000          0.001   0.0",
+      " Kinetic energy            1    4      40001       0.906          8.658   2.8",
+      " Rest                                              0.716          6.845   2.2",
+      "--------------------------------------------------------------------------------",
+      " Total                                            32.000        305.892 100.0",
+      "--------------------------------------------------------------------------------",
+      "               Core t (s)   Wall t (s)        (%)",
+      "       Time:      128.000       32.000      400.0",
+      "                 (ns/day)    (hour/ns)",
+      "Performance:     5400.054        0.004",
+      "Finished mdrun on rank 0 Mon Nov  2 09:25:36 2026"
+    ],
+    "max_force": null,
+    "performance_ns_per_day": 5400.054,
+    "ps_completed": 2000.0,
+    "stages_seconds": 38.72,
+    "steps": null,
+    "steps_done": 100000,
+    "steps_requested": 100000,
+    "structure": {
+      "final": {
+        "beads_total": 1309,
+        "box_nm": 5.35,
+        "clusters": {
+          "clusters": [
+            7
+          ],
+          "contacts": 1,
+          "largest": 7
+        },
+        "peptide_beads": 7,
+        "rg_nm": 0.594
+      },
+      "start": {
+        "beads_total": 1309,
+        "box_nm": 5.358,
+        "clusters": {
+          "clusters": [
+            7
+          ],
+          "contacts": 1,
+          "largest": 7
+        },
+        "peptide_beads": 7,
+        "rg_nm": 0.651
+      }
+    },
+    "warnings": [],
+    "workdir": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092358"
+  },
+  "finished_at": "2026-11-02T01:25:54",
+  "performance_ns_per_day": 5400.054,
+  "salt_m": 0.15,
+  "schema": "cgmd.agent.md.v1",
+  "sequence": "YLSLLQR",
+  "stages": [
+    {
+      "stage": "probe",
+      "status": "ok",
+      "summary": "cgmd probe: gmx 2025.1 | python 3.12.10 | martini3 found"
+    },
+    {
+      "job": "20261102T012308-7bc6",
+      "stage": "build",
+      "status": "ok",
+      "summary": "cgmd build: YLSLLQR -> 1309 beads in 5.3 nm box (1275 W, 13 NA, 14 CL)"
+    }
+  ],
+  "started_at": "2026-11-02T01:22:45",
+  "status": "ok",
+  "steps": [
+    {
+      "finished": true,
+      "job": "20261102T012411-9e6d",
+      "performance_ns_per_day": 5400.054,
+      "requested_ns": 2.0,
+      "slice_ns": 2.0,
+      "stage": "run",
+      "status": "ok",
+      "steps_done": 100000,
+      "summary": "cgmd run: 2000.0 ps CG on gpu at 5400.054 ns/day",
+      "warnings": []
+    }
+  ],
+  "summary": "YLSLLQR: 2.000 ns at 5400.054 ns/day (beads 1309)",
+  "system": {
+    "beads_total": 1309,
+    "box_nm": 5.3,
+    "cl": 14,
+    "gro": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092358\\system.gro",
+    "na": 13,
+    "top": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092358\\topol.top",
+    "water_beads": 1275
+  },
+  "target_ns": 2.0,
+  "workdir": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092358"
+}
