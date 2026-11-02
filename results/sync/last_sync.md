@@ -1,9 +1,9 @@
 # sync receipt
 
-- at: 2026-11-02T03:14:30
+- at: 2026-11-02T03:14:59
 - branch: arena/03860148-jevharness
-- head: 1a1c195
-- message: docs: advisor report (problem list + methodological difficulties); sync: commit receipt with the same head
+- head: 9e32e80
+- message: docs: HTML (real tables) version of the advisor report for Google Docs conversion
 - push: ok
 - criteria: passed
   - [PASS] require_files:results/desktop/md_*.json (1 hit(s))
