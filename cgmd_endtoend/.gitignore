@@ -1,0 +1,13 @@
+# CGMD 红线：重轨迹/坐标/检查点一律不入库（与文档 §11.3 一致）
+*.xtc
+*.trr
+*.tpr
+*.cpt
+*.gro
+*.edr
+*.log
+*.xvg
+*.trr.gz
+*.xtc.gz
+# 第三方力场（许可原因不入库）
+martini_v3.0.0*.itp

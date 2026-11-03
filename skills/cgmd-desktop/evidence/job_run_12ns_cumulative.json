@@ -1,0 +1,365 @@
+{
+  "detail": {
+    "exit_code": 0,
+    "mode": "run",
+    "ops": {
+      "detail": {
+        "report": {
+          "accelerator": "gpu",
+          "finished": true,
+          "gmx": "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+          "gmx_how": "PATH",
+          "log_tail": [
+            " Wait GPU NB local         1    4     200001       1.551         15.031   3.2",
+            " Wait GPU state copy       1    4     484003      19.116        185.218  39.8",
+            " NB X/F buffer ops.        1    4       8001       0.068          0.656   0.1",
+            " Write traj.               1    4         41       0.023          0.218   0.0",
+            " GPU constr. setup         1    4          1       0.000          0.001   0.0",
+            " Kinetic energy            1    4      80001       0.461          4.472   1.0",
+            " Rest                                              1.084         10.505   2.3",
+            "--------------------------------------------------------------------------------",
+            " Total                                            48.000        465.084 100.0",
+            "--------------------------------------------------------------------------------",
+            "               Core t (s)   Wall t (s)        (%)",
+            "       Time:      192.000       48.000      400.0",
+            "                 (ns/day)    (hour/ns)",
+            "Performance:     7200.036        0.003",
+            "Finished mdrun on rank 0 Mon Nov  2 09:33:53 2026"
+          ],
+          "max_force": null,
+          "performance_ns_per_day": 7200.036,
+          "ps_completed": 12000.0,
+          "stages_seconds": 55.1,
+          "steps": null,
+          "steps_done": 600000,
+          "steps_requested": 600000,
+          "structure": {
+            "final": {
+              "beads_total": 1309,
+              "box_nm": 5.369,
+              "clusters": {
+                "clusters": [
+                  7
+                ],
+                "contacts": 1,
+                "largest": 7
+              },
+              "peptide_beads": 7,
+              "rg_nm": 0.679
+            },
+            "start": {
+              "beads_total": 1309,
+              "box_nm": 5.378,
+              "clusters": {
+                "clusters": [
+                  7
+                ],
+                "contacts": 1,
+                "largest": 7
+              },
+              "peptide_beads": 7,
+              "rg_nm": 0.611
+            }
+          },
+          "warnings": [],
+          "workdir": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759"
+        },
+        "stages": [
+          {
+            "argv": [
+              "grompp",
+              "-f",
+              "em.mdp",
+              "-c",
+              "system.gro",
+              "-p",
+              "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759\\topol.top",
+              "-o",
+              "em.tpr",
+              "-maxwarn",
+              "4"
+            ],
+            "error_tail": [
+              "                      :-) GROMACS - gmx grompp, 2025.1 (-:",
+              "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+              "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+              "Working dir:  C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759",
+              "Command line:",
+              "  gmx grompp -f em.mdp -c system.gro -p C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759\\topol.top -o em.tpr -maxwarn 4",
+              "Number of degrees of freedom in T-Coupling group rest is 3924.00",
+              "The integrator does not provide a ensemble temperature, there is no system ensemble temperature",
+              "Back Off! I just backed up em.tpr to ./#em.tpr.2#",
+              "GROMACS reminds you: \"All that glitters may not be gold, but at least it contains free electrons.\" (John Desmond Baernal)"
+            ],
+            "output_tail": [
+              "Generated 844 of the 356590 non-bonded parameter combinations",
+              "Excluding 1 bonded neighbours molecule type 'Peptide'",
+              "Excluding 1 bonded neighbours molecule type 'W'",
+              "Excluding 1 bonded neighbours molecule type 'NA'",
+              "Excluding 1 bonded neighbours molecule type 'CL'",
+              "Analysing residue names:",
+              "There are:     7    Protein residues",
+              "There are:  1275      Other residues",
+              "There are:    27        Ion residues",
+              "Analysing Protein...",
+              "Analysing residues not classified as Protein/DNA/RNA/Water and splitting into groups...",
+              "This run will generate roughly 0 Mb of data"
+            ],
+            "returncode": 0,
+            "seconds": 0.72,
+            "stage": "grompp-em"
+          },
+          {
+            "argv": [
+              "mdrun",
+              "-deffnm",
+              "em",
+              "-nb",
+              "gpu",
+              "-pme",
+              "cpu",
+              "-ntmpi",
+              "1",
+              "-ntomp",
+              "4",
+              "-gpu_id",
+              "0"
+            ],
+            "error_tail": [
+              "Back Off! I just backed up em.trr to ./#em.trr.2#",
+              "Back Off! I just backed up em.edr to ./#em.edr.2#",
+              "Steepest Descents:",
+              "   Tolerance (Fmax)   =  2.00000e+02",
+              "   Number of steps    =         5000",
+              "writing lowest energy coordinates.",
+              "Back Off! I just backed up em.gro to ./#em.gro.2#",
+              "Steepest Descents converged to Fmax < 200 in 6 steps",
+              "Potential Energy  = -2.5171582e+04",
+              "Maximum force     =  1.8886391e+02 on atom 13",
+              "Norm of force     =  4.3996844e+01",
+              "GROMACS reminds you: \"All that glitters may not be gold, but at least it contains free electrons.\" (John Desmond Baernal)"
+            ],
+            "output_tail": [],
+            "returncode": 0,
+            "seconds": 0.41,
+            "stage": "mdrun-em"
+          },
+          {
+            "argv": [
+              "grompp",
+              "-f",
+              "eq.mdp",
+              "-c",
+              "em.gro",
+              "-p",
+              "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759\\topol.top",
+              "-o",
+              "eq.tpr",
+              "-maxwarn",
+              "4"
+            ],
+            "error_tail": [
+              "                      :-) GROMACS - gmx grompp, 2025.1 (-:",
+              "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+              "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+              "Working dir:  C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759",
+              "Command line:",
+              "  gmx grompp -f eq.mdp -c em.gro -p C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759\\topol.top -o eq.tpr -maxwarn 4",
+              "Number of degrees of freedom in T-Coupling group System is 3924.00",
+              "Back Off! I just backed up eq.tpr to ./#eq.tpr.2#",
+              "GROMACS reminds you: \"Memory is like an orgasm. It's a lot better if you don't have to fake it.\" (Seymour Cray, on virtual memory)"
+            ],
+            "output_tail": [
+              "Velocities were taken from a Maxwell distribution at 310 K",
+              "Analysing residue names:",
+              "There are:     7    Protein residues",
+              "There are:  1275      Other residues",
+              "There are:    27        Ion residues",
+              "Analysing Protein...",
+              "Analysing residues not classified as Protein/DNA/RNA/Water and splitting into groups...",
+              "Determining Verlet buffer for a tolerance of 0.005 kJ/mol/ps at 310 K",
+              "Calculated rlist for 1x1 atom pair-list as 1.357 nm, buffer size 0.257 nm",
+              "Set rlist, assuming 4x4 atom pair-list, to 1.287 nm, buffer size 0.187 nm",
+              "Note that mdrun will redetermine rlist based on the actual pair-list setup",
+              "This run will generate roughly 0 Mb of data"
+            ],
+            "returncode": 0,
+            "seconds": 0.8,
+            "stage": "grompp-eq"
+          },
+          {
+            "argv": [
+              "mdrun",
+              "-deffnm",
+              "eq",
+              "-nb",
+              "gpu",
+              "-pme",
+              "cpu",
+              "-ntmpi",
+              "1",
+              "-ntomp",
+              "4",
+              "-gpu_id",
+              "0"
+            ],
+            "error_tail": [
+              "Back Off! I just backed up eq.xtc to ./#eq.xtc.2#",
+              "Back Off! I just backed up eq.edr to ./#eq.edr.2#",
+              "starting mdrun 'CGMD backbone CG YLSLLQR with Martini 3 water'",
+              "10000 steps,    200.0 ps.",
+              "Step 0  Warning: pressure scaling more than 1%, mu: 1.07292 1.07292 1.07292",
+              "Writing final coordinates.",
+              "Back Off! I just backed up eq.gro to ./#eq.gro.2#",
+              "               Core t (s)   Wall t (s)        (%)",
+              "       Time:       12.000        3.000      400.0",
+              "                 (ns/day)    (hour/ns)",
+              "Performance:     5760.576        0.004",
+              "GROMACS reminds you: \"The secret to getting ahead is getting started\" (Mark Twain)"
+            ],
+            "output_tail": [],
+            "returncode": 0,
+            "seconds": 3.39,
+            "stage": "mdrun-eq"
+          },
+          {
+            "argv": [
+              "grompp",
+              "-f",
+              "prod.mdp",
+              "-c",
+              "eq.gro",
+              "-p",
+              "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759\\topol.top",
+              "-o",
+              "prod.tpr",
+              "-maxwarn",
+              "4"
+            ],
+            "error_tail": [
+              "                      :-) GROMACS - gmx grompp, 2025.1 (-:",
+              "Executable:   F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+              "Data prefix:  F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86",
+              "Working dir:  C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759",
+              "Command line:",
+              "  gmx grompp -f prod.mdp -c eq.gro -p C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759\\topol.top -o prod.tpr -maxwarn 4",
+              "Number of degrees of freedom in T-Coupling group System is 3924.00",
+              "Back Off! I just backed up prod.tpr to ./#prod.tpr.2#",
+              "GROMACS reminds you: \"A little less conversation, a little more action, please.\" (Elvis Presley)"
+            ],
+            "output_tail": [
+              "Velocities were taken from a Maxwell distribution at 310 K",
+              "Analysing residue names:",
+              "There are:     7    Protein residues",
+              "There are:  1275      Other residues",
+              "There are:    27        Ion residues",
+              "Analysing Protein...",
+              "Analysing residues not classified as Protein/DNA/RNA/Water and splitting into groups...",
+              "Determining Verlet buffer for a tolerance of 0.005 kJ/mol/ps at 310 K",
+              "Calculated rlist for 1x1 atom pair-list as 1.351 nm, buffer size 0.251 nm",
+              "Set rlist, assuming 4x4 atom pair-list, to 1.280 nm, buffer size 0.180 nm",
+              "Note that mdrun will redetermine rlist based on the actual pair-list setup",
+              "This run will generate roughly 3 Mb of data"
+            ],
+            "returncode": 0,
+            "seconds": 0.81,
+            "stage": "grompp-prod"
+          },
+          {
+            "argv": [
+              "mdrun",
+              "-deffnm",
+              "prod",
+              "-cpi",
+              "prod.cpt",
+              "-append",
+              "-nb",
+              "gpu",
+              "-pme",
+              "cpu",
+              "-ntmpi",
+              "1",
+              "-ntomp",
+              "4",
+              "-gpu_id",
+              "0"
+            ],
+            "error_tail": [
+              "      and the -pin option is set to auto: will not pin threads to cpus.",
+              "      This can lead to significant performance degradation.",
+              "      Consider using -pin on (and -pinoffset in case you run multiple jobs).",
+              "starting mdrun 'CGMD backbone CG YLSLLQR with Martini 3 water'",
+              "600000 steps,  12000.0 ps (continuing from step 400000,   8000.0 ps).",
+              "Writing final coordinates.",
+              "Back Off! I just backed up prod.gro to ./#prod.gro.2#",
+              "               Core t (s)   Wall t (s)        (%)",
+              "       Time:      192.000       48.000      400.0",
+              "                 (ns/day)    (hour/ns)",
+              "Performance:     7200.036        0.003",
+              "GROMACS reminds you: \"We had the quaint notion at the time that software should be completely, absolutely free of bugs. Unfortunately it's a notion that never really quite caught on.\" (Mary Allen Wilkes)"
+            ],
+            "output_tail": [],
+            "resumed": true,
+            "returncode": 0,
+            "seconds": 48.97,
+            "stage": "mdrun-prod-gpu"
+          }
+        ],
+        "workdir": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-092759"
+      },
+      "generated_at": "2026-11-02T09:33:53",
+      "host": "DESKTOP-IEUDGS5",
+      "mode": "run",
+      "python": "3.12.10",
+      "schema": "cgmd.desk_ops.v1",
+      "seconds": 55.14,
+      "status": "ok",
+      "summary": "12000.0 ps CG on gpu at 7200.036 ns/day"
+    },
+    "python": "C:\\Users\\BNI\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
+  },
+  "finished_at": "2026-11-02T09:33:53+08:00",
+  "id": "20261102T013225-667a",
+  "kind": "cgmd",
+  "logs_tail": [
+    "          \"0\"",
+    "        ],",
+    "        \"returncode\": 0,",
+    "        \"seconds\": 48.97,",
+    "        \"output_tail\": [],",
+    "        \"error_tail\": [",
+    "          \"      and the -pin option is set to auto: will not pin threads to cpus.\",",
+    "          \"      This can lead to significant performance degradation.\",",
+    "          \"      Consider using -pin on (and -pinoffset in case you run multiple jobs).\",",
+    "          \"starting mdrun 'CGMD backbone CG YLSLLQR with Martini 3 water'\",",
+    "          \"600000 steps,  12000.0 ps (continuing from step 400000,   8000.0 ps).\",",
+    "          \"Writing final coordinates.\",",
+    "          \"Back Off! I just backed up prod.gro to ./#prod.gro.2#\",",
+    "          \"               Core t (s)   Wall t (s)        (%)\",",
+    "          \"       Time:      192.000       48.000      400.0\",",
+    "          \"                 (ns/day)    (hour/ns)\",",
+    "          \"Performance:     7200.036        0.003\",",
+    "          \"GROMACS reminds you: \\\"We had the quaint notion at the time that software should be completely, absolutely free of bugs. Unfortunately it's a notion that never really quite caught on.\\\" (Mary Allen Wilkes)\"",
+    "        ],",
+    "        \"resumed\": true",
+    "      }",
+    "    ],",
+    "    \"workdir\": \"C:\\\\Users\\\\BNI\\\\cgmd-runs\\\\cg-20261102-092759\"",
+    "  },",
+    "  \"generated_at\": \"2026-11-02T09:33:53\",",
+    "  \"seconds\": 55.14,",
+    "  \"python\": \"3.12.10\",",
+    "  \"host\": \"DESKTOP-IEUDGS5\"",
+    "}",
+    "CGMD_EXIT_CODE=0 "
+  ],
+  "note": "run to 12.000 ns",
+  "peer": "hukeying85-ux/JevHarness",
+  "requested_by": "user",
+  "schema": "cgmd.mailbox.result.v1",
+  "seconds": 56.05,
+  "started_at": "2026-11-02T09:32:57+08:00",
+  "status": "ok",
+  "summary": "cgmd run: 12000.0 ps CG on gpu at 7200.036 ns/day",
+  "worker": "DESKTOP-IEUDGS5"
+}

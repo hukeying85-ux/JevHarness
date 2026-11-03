@@ -1,0 +1,311 @@
+{
+    "schema":  "cgmd.mailbox.worker.v1",
+    "generated_at":  "2026-10-30T15:16:09+08:00",
+    "host":  "DESKTOP-IEUDGS5",
+    "ref":  "hub/mailbox",
+    "state":  "ran",
+    "branch_created":  false,
+    "init_note":  "",
+    "worktree":  "C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox",
+    "queued":  1,
+    "max_jobs":  1,
+    "allow_shell":  false,
+    "inbox":  [
+                  "20261030T071529-f003.json"
+              ],
+    "attempts":  {
+                     "20261029T063704-9a27":  1,
+                     "20261029T063955-a9b5":  1,
+                     "20261029T064433-5331":  1,
+                     "20261029T064657-a850":  1,
+                     "20261029T064849-5f39":  1,
+                     "20261029T065021-c6ea":  1,
+                     "20261029T065241-deb3":  1,
+                     "20261029T065614-93ef":  1,
+                     "20261029T065816-bd45":  1,
+                     "20261029T065938-0f13":  1,
+                     "20261029T070048-e9db":  1,
+                     "20261029T070210-d9c0":  1,
+                     "20261029T070349-c42e":  1,
+                     "20261029T070436-3f40":  1,
+                     "20261029T070612-9728":  1,
+                     "20261029T070717-3684":  1,
+                     "20261029T073039-b78f":  1,
+                     "20261029T073120-60bd":  1,
+                     "20261029T075318-79cd":  1,
+                     "20261029T081935-f37c":  1,
+                     "20261029T082117-c8b5":  1,
+                     "20261029T082308-4946":  1,
+                     "20261029T082641-df13":  1,
+                     "20261029T082826-2cd0":  1,
+                     "20261030T023304-8ca9":  1,
+                     "20261030T024445-eac0":  1,
+                     "20261030T024805-f089":  1,
+                     "20261030T024913-4961":  1,
+                     "20261030T025021-7065":  1,
+                     "20261030T025113-6ac4":  1,
+                     "20261030T031201-4828":  1,
+                     "20261030T031313-ffa4":  1,
+                     "20261030T031611-6555":  1,
+                     "20261030T031726-63c0":  1,
+                     "20261030T031817-09ce":  1,
+                     "20261030T031929-de92":  1,
+                     "20261030T032022-1efc":  1,
+                     "20261030T032121-945b":  1,
+                     "20261030T032212-dc4a":  1,
+                     "20261030T032322-9a87":  1,
+                     "20261030T032414-2adc":  1,
+                     "20261030T032555-f197":  1,
+                     "20261030T032946-2409":  1,
+                     "20261030T033022-dadf":  1,
+                     "20261030T033123-f579":  1,
+                     "20261030T033257-5c2a":  1,
+                     "20261030T040258-9a11":  1,
+                     "20261030T040524-6882":  1,
+                     "20261030T040551-363d":  1,
+                     "20261030T041741-e427":  1,
+                     "20261030T041746-72fa":  1,
+                     "20261030T041911-979f":  1,
+                     "20261030T041918-8934":  1,
+                     "20261030T041924-6978":  1,
+                     "20261030T041939-66b1":  1,
+                     "20261030T041946-f2ab":  1,
+                     "20261030T042317-d463":  1,
+                     "20261030T042918-da58":  1,
+                     "20261030T071030-88d7":  1,
+                     "20261030T071529-f003":  1
+                 },
+    "log_tail":  [
+                     "2026-10-30 14:26:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:27:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:28:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:29:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:30:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:31:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:32:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:33:55 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:34:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:35:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:36:57 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:37:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:38:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:39:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:40:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:41:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:42:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:43:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:44:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:45:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:46:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:47:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:48:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:49:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:50:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:51:55 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:52:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:53:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:54:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:55:55 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:56:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:57:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:58:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 14:59:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:00:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:01:56 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:02:55 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:02:59 [INFO] job kind=ping",
+                     "2026-10-30 15:03:00 [INFO] peer hukeying85-ux/JevHarness job 20261030T070202-f454 (ping) -\u003e ok: DESKTOP-IEUDGS5 alive, gmx 2025.1, 1 gpu(s)",
+                     "2026-10-30 15:03:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:04:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:05:00 [WARN] peer hukeying85-ux/0fuye#arena/7ed6241a-0fuye unreachable: git.exe : fatal: unable to access \u0027https://github.com/hukeying85-ux/0fuye.git/\u0027: schannel: next InitializeSecurityConte",
+                     "xt failed: SEC_E_ILLEGAL_MESSAGE (0x80090326) - This error usually occurs when ",
+                     "2026-10-30 15:05:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:06:57 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:07:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:07:58 [INFO] job kind=gmx",
+                     "2026-10-30 15:07:58 [INFO] peer hukeying85-ux/JevHarness job 20261030T070716-af74 (gmx) -\u003e fail: gmx check -s C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr exit 1: CGMD_EXIT_CODE=1 ",
+                     "2026-10-30 15:08:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:09:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:10:55 [INFO] mailbox: 1 queued, running at most 1",
+                     "2026-10-30 15:10:55 [INFO] job kind=ping",
+                     "2026-10-30 15:10:55 [INFO] job 20261030T071030-88d7 (ping) -\u003e ok: DESKTOP-IEUDGS5 alive, gmx 2025.1, 1 gpu(s)",
+                     "2026-10-30 15:11:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:12:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:13:55 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:14:54 [INFO] mailbox: 0 queued, running at most 1",
+                     "2026-10-30 15:15:55 [INFO] mailbox: 1 queued, running at most 1",
+                     "2026-10-30 15:15:55 [INFO] job kind=deskdiag",
+                     "2026-10-30 15:15:59 [INFO] job 20261030T071529-f003 (deskdiag) -\u003e ok: desk C:\\0apps\\ArenaDesk | drift 0 | served boot-fallback True | tasks 4"
+                 ],
+    "call_tail":  [
+
+                  ],
+    "peer_repos":  [
+                       "hukeying85-ux/JevHarness",
+                       "hukeying85-ux/0fuye#arena/7ed6241a-0fuye"
+                   ],
+    "peers":  [
+                  {
+                      "peer":  "hukeying85-ux/JevHarness",
+                      "status":  "idle",
+                      "ran":  0,
+                      "note":  "13 request(s) seen, all already answered"
+                  },
+                  {
+                      "peer":  "hukeying85-ux/0fuye#arena/7ed6241a-0fuye",
+                      "status":  "idle",
+                      "ran":  0,
+                      "note":  "1 request(s) seen, all already answered"
+                  }
+              ],
+    "processed":  [
+                      {
+                          "id":  "20261030T071529-f003",
+                          "kind":  "deskdiag",
+                          "status":  "ok",
+                          "summary":  "desk C:\\0apps\\ArenaDesk | drift 0 | served boot-fallback True | tasks 4"
+                      }
+                  ],
+    "recent":  [
+                   {
+                       "id":  "20261030T071529-f003",
+                       "kind":  "deskdiag",
+                       "status":  "ok",
+                       "summary":  "desk C:\\0apps\\ArenaDesk | drift 0 | served boot-fallback True | tasks 4",
+                       "finished_at":  "2026-10-30T15:15:59+08:00"
+                   },
+                   {
+                       "id":  "20261030T071030-88d7",
+                       "kind":  "ping",
+                       "status":  "ok",
+                       "summary":  "DESKTOP-IEUDGS5 alive, gmx 2025.1, 1 gpu(s)",
+                       "finished_at":  "2026-10-30T15:10:55+08:00"
+                   },
+                   {
+                       "id":  "20261030T070716-af74",
+                       "kind":  "gmx",
+                       "status":  "fail",
+                       "summary":  "gmx check -s C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr exit 1: CGMD_EXIT_CODE=1 ",
+                       "finished_at":  "2026-10-30T15:07:58+08:00"
+                   },
+                   {
+                       "id":  "20261030T070202-f454",
+                       "kind":  "ping",
+                       "status":  "ok",
+                       "summary":  "DESKTOP-IEUDGS5 alive, gmx 2025.1, 1 gpu(s)",
+                       "finished_at":  "2026-10-30T15:03:00+08:00"
+                   },
+                   {
+                       "id":  "20261030T042918-da58",
+                       "kind":  "ping",
+                       "status":  "ok",
+                       "summary":  "DESKTOP-IEUDGS5 alive, gmx 2025.1, 1 gpu(s)",
+                       "finished_at":  "2026-10-30T12:29:55+08:00"
+                   },
+                   {
+                       "id":  "20261030T042317-d463",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx gyrate -s C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.xtc -n C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\peptide.ndx -sel group 0 -o C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\gyrate.xvg exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:27:56+08:00"
+                   },
+                   {
+                       "id":  "20261030T041946-f2ab",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx traj -s C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.xtc -n C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\peptide.ndx -ox C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\peptide.xvg -dt 5000 -xvg none exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:26:54+08:00"
+                   },
+                   {
+                       "id":  "20261030T041939-66b1",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx traj -s C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.xtc -n C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\phosphate.ndx -ox C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\phosphate.xvg -ob C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\box.xvg -dt 5000 -xvg none exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:25:54+08:00"
+                   },
+                   {
+                       "id":  "20261030T041924-6978",
+                       "kind":  "gmx",
+                       "status":  "timeout",
+                       "summary":  "gmx energy -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.edr -o C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\energy.xvg exit 124:  41  Box-Vel-YY      42  Box-Vel-ZZ      43  T-System        44  Lamb-System   ",
+                       "finished_at":  "2026-10-30T12:25:25+08:00"
+                   },
+                   {
+                       "id":  "20261030T041918-8934",
+                       "kind":  "gmx",
+                       "status":  "timeout",
+                       "summary":  "gmx gyrate -s C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.xtc -n C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\peptide.ndx -o C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\gyrate.xvg exit 124: \u003e ",
+                       "finished_at":  "2026-10-30T12:22:54+08:00"
+                   },
+                   {
+                       "id":  "20261030T041911-979f",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx distance -s C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.xtc -n C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\distance.ndx -select com of group 0 plus com of group 1 -oxyz C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\distance_xyz.xvg -oall C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\distance.xvg exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:19:55+08:00"
+                   },
+                   {
+                       "id":  "20261030T041746-72fa",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx traj -h exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:18:54+08:00"
+                   },
+                   {
+                       "id":  "20261030T041741-e427",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx check -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.xtc exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:17:55+08:00"
+                   },
+                   {
+                       "id":  "20261030T040551-363d",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx mdrun -deffnm C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod -cpi C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.cpt -nb gpu -bonded gpu -gpu_id 0 -ntmpi 1 -ntomp 4 -pin on -maxh 0.50 exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:17:13+08:00"
+                   },
+                   {
+                       "id":  "20261030T040524-6882",
+                       "kind":  "ping",
+                       "status":  "ok",
+                       "summary":  "DESKTOP-IEUDGS5 alive, gmx 2025.1, 1 gpu(s)",
+                       "finished_at":  "2026-10-30T12:05:55+08:00"
+                   },
+                   {
+                       "id":  "20261030T040258-9a11",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx check -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.xtc exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:04:55+08:00"
+                   },
+                   {
+                       "id":  "20261030T033257-5c2a",
+                       "kind":  "selfcheck",
+                       "status":  "fail",
+                       "summary":  "selfcheck: 15 pass / 3 warn / 0 fail",
+                       "finished_at":  "2026-10-30T12:04:22+08:00"
+                   },
+                   {
+                       "id":  "20261030T033123-f579",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx mdrun -deffnm C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod -nb gpu -bonded gpu -gpu_id 0 -ntmpi 1 -ntomp 4 -pin on -maxh 0.50 exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T12:02:38+08:00"
+                   },
+                   {
+                       "id":  "20261030T033022-dadf",
+                       "kind":  "smoke",
+                       "status":  "ok",
+                       "summary":  "gmx 2025.1: 100 ps integrated on gpu",
+                       "finished_at":  "2026-10-30T11:32:25+08:00"
+                   },
+                   {
+                       "id":  "20261030T032946-2409",
+                       "kind":  "gmx",
+                       "status":  "ok",
+                       "summary":  "gmx grompp -f C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\prod.mdp -c C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_eq.gro -t C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_eq.cpt -p C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\topol.top -n C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\mailbox\\cgmd_100ns_stage\\index.ndx -o C:\\cgmd\\0fuye\\skills\\cgmd-hub\\state\\cgmd_100ns_prod.tpr -maxwarn 0 exit 0: CGMD_EXIT_CODE=0 ",
+                       "finished_at":  "2026-10-30T11:30:56+08:00"
+                   }
+               ]
+}

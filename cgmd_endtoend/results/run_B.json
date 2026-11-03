@@ -1,0 +1,38 @@
+{
+  "schema": "cgmd.martini.onepot.run.v1",
+  "equilibration": {
+    "em": {
+      "log": "em.log",
+      "finished": true
+    },
+    "nvt": {
+      "log": "nvt.log",
+      "ns_per_day": 1705.276,
+      "hour_per_ns": 0.014,
+      "finished": true
+    },
+    "npt": {
+      "log": "npt.log",
+      "ns_per_day": 1672.143,
+      "hour_per_ns": 0.014,
+      "finished": true
+    }
+  },
+  "production": {
+    "prod.log": {
+      "steps": 2500000,
+      "simulated_ns": 50.0,
+      "ns_per_day": 1668.971,
+      "lincs_warnings": 0,
+      "finished": true,
+      "fatal_error": false
+    }
+  },
+  "expected_ns": 50.0,
+  "verdict": {
+    "all_stages_finished": true,
+    "production_ns_total": 50.0,
+    "no_lincs_warnings": true,
+    "no_fatal_error": true
+  }
+}

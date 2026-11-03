@@ -1,0 +1,16 @@
+{
+  "branch": "arena/03860148-jevharness",
+  "remote": "origin",
+  "repo": ".",
+  "outdir": "results/desktop",
+  "answer_wait_s": 1500,
+  "poll_interval_s": 20,
+  "desk_branch": "arena/32cd826e-0fuye",
+  "desk_remote": "https://github.com/hukeying85-ux/0fuye.git",
+  "desk_clone": "~/.cache/cgmd-desk",
+  "desk_host": "DESKTOP-IEUDGS5",
+  "gate": "python3 skills/desk-loop/gate.py",
+  "receipt": "results/sync/last_sync.md",
+  "criteria": "skills/desk-loop/success_criteria.json",
+  "_note": "branch/remote 是与本会话约定的工作分支（gate 会拒绝 main/master 与分支不符）；outdir 是回执与 manifest 的落地目录；answer_wait_s 是单个工单等多久；desk_* 指向台式机仓库（只读克隆，答案从这里 pull）；gate 是 sync 前的自检；criteria 是成功标准文件。"
+}

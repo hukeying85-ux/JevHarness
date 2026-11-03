@@ -1,0 +1,143 @@
+; This file was generated using the following command:
+; /home/user/.venv/bin/martinize2 -f peptide_atomistic.pdb -x peptide_cg.pdb -o peptide.top -name Protein -ff martini3001 -ss C -ignh -elastic -ef 500 -el 0.5 -eu 0.9 -p backbone -maxwarn 1
+; martinize with vermouth 0.15.0
+; The following sequence of secondary structure 
+; was used for the full system:
+; CCCCCCC
+
+; Please cite the following papers:
+; Kroon, P C; Grunewald, F; Barnoud, J; van Tilburg, M; Souza, P C; Wassenaar, T A; Marrink, S J;  elife 2024; 10.7554/elife.90627.2
+; Souza, P C T; Alessandri, R; Barnoud, J; Thallmair, S; Faustino, I; Grünewald, F; Patmanidis, I; Abdizadeh, H; Bruininks, B M H; Wassenaar, T A; Kroon, P C; Melcr, J; Nieto, V; Corradi, V; Khan, H M; Domański, J; Javanainen, M; Martinez-Seara, H; Reuter, N; Best, R B; Vattulainen, I; Monticelli, L; Periole, X; Tieleman, D P; de Vries, A H; Marrink, S J;  Nature Methods 2021; 10.1038/s41592-021-01098-3
+
+#ifndef POSRES_FC
+#define POSRES_FC 1000
+#endif
+
+[ moleculetype ]
+Protein_0 1
+
+[ atoms ]
+ 1 Q5   1 TYR BB   1   1 
+ 2 TC4  1 TYR SC1  2 0.0 
+ 3 TC5  1 TYR SC2  3 0.0 
+ 4 TC5  1 TYR SC3  4 0.0 
+ 5 TN6  1 TYR SC4  5 0.0 
+ 6 P2   2 LEU BB   6 0.0 
+ 7 SC2  2 LEU SC1  7 0.0 
+ 8 P2   3 SER BB   8 0.0 
+ 9 TP1  3 SER SC1  9 0.0 
+10 P2   4 LEU BB  10 0.0 
+11 SC2  4 LEU SC1 11 0.0 
+12 P2   5 LEU BB  12 0.0 
+13 SC2  5 LEU SC1 13 0.0 
+14 P2   6 GLN BB  14 0.0 
+15 P5   6 GLN SC1 15 0.0 
+16 Q5   7 ARG BB  16  -1 
+17 SC3  7 ARG SC1 17 0.0 
+18 SQ3p 7 ARG SC2 18 1.0 
+
+[ position_restraints ]
+#ifdef POSRES
+ 1 1 POSRES_FC POSRES_FC POSRES_FC
+ 6 1 POSRES_FC POSRES_FC POSRES_FC
+ 8 1 POSRES_FC POSRES_FC POSRES_FC
+10 1 POSRES_FC POSRES_FC POSRES_FC
+12 1 POSRES_FC POSRES_FC POSRES_FC
+14 1 POSRES_FC POSRES_FC POSRES_FC
+16 1 POSRES_FC POSRES_FC POSRES_FC
+#endif
+
+[ bonds ]
+; Backbone bonds
+ 1  6 1 0.350 4000
+ 6  8 1 0.350 4000
+ 8 10 1 0.350 4000
+10 12 1 0.350 4000
+12 14 1 0.350 4000
+14 16 1 0.350 4000
+
+; Side chain bonds
+ 1  2 1 0.325 5000
+ 6  7 1 0.363 7500
+ 8  9 1 0.287 7500
+10 11 1 0.363 7500
+12 13 1 0.363 7500
+14 15 1 0.400 5000
+16 17 1 0.330 5000
+17 18 1 0.380 5000
+
+#ifdef FLEXIBLE
+; Side chain bonds
+ 2  3 1 0.300 1000000
+ 2  4 1 0.300 1000000
+ 3  4 1 0.300 1000000
+ 3  5 1 0.285 1000000
+ 4  5 1 0.285 1000000
+#endif
+
+[ constraints ]
+#ifndef FLEXIBLE
+; Side chain bonds
+ 2  3 1 0.300
+ 2  4 1 0.300
+ 3  4 1 0.300
+ 3  5 1 0.285
+ 4  5 1 0.285
+#endif
+
+[ angles ]
+; BBB angles
+ 1  6  8 10 127 20
+ 6  8 10 10 127 20
+ 8 10 12 10 127 20
+10 12 14 10 127 20
+12 14 16 10 127 20
+
+; BBS angles regular martini
+ 1  6  7 2 100 25
+ 6  8  9 2 100 25
+ 8 10 11 2 100 25
+10 12 13 2 100 25
+12 14 15 2 100 25
+14 16 17 2 100 25
+
+; First SBB regular martini
+ 2  1  6 2 100 25
+
+; SC-BB-BB and BB-BB-SC scFix
+ 2  1  6 10 100 15 ; SC-BB-BB
+ 1  6  7 10 100 15 ; BB-BB-SC
+ 7  6  8 10 100 15 ; SC-BB-BB
+ 6  8  9 10 100 15 ; BB-BB-SC
+ 9  8 10 10 100 15 ; SC-BB-BB
+ 8 10 11 10 100 15 ; BB-BB-SC
+11 10 12 10 100 15 ; SC-BB-BB
+10 12 13 10 100 15 ; BB-BB-SC
+13 12 14 10 100 15 ; SC-BB-BB
+12 14 15 10 100 15 ; BB-BB-SC
+15 14 16 10 100 15 ; SC-BB-BB
+14 16 17 10 100 15 ; BB-BB-SC
+
+; Side chain angles
+ 1  2  3 2 120.000 60.0
+ 1  2  4 2 120.000 60.0
+16 17 18 2 180.000 25.0
+
+[ dihedrals ]
+; SC-BB-BB-SC scFix
+ 2  1  6  7 1 10.9 75 1 ; SC-BB-BB-SC
+ 7  6  8  9 1 38.3 75 1 ; SC-BB-BB-SC
+ 9  8 10 11 1 -17.9 75 1 ; SC-BB-BB-SC
+11 10 12 13 1 14.0 75 1 ; SC-BB-BB-SC
+13 12 14 15 1 22.6 75 1 ; SC-BB-BB-SC
+15 14 16 17 1 9.1 75 1 ; SC-BB-BB-SC
+
+[ dihedrals ]
+ 5  3  4  2 2 180.0 50.0
+
+[ exclusions ]
+ 1  2  3  4  5 
+ 2  3  4  5 
+ 3  4  5 
+ 4  5 
+

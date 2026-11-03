@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-11-02T01:27:13",
+  "cuda_runtime": "12.80",
+  "drives": [
+    "C:\\",
+    "F:\\"
+  ],
+  "gmx": "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+  "gmx_gpu": "CUDA",
+  "gmx_version": "2025.1",
+  "host": "DESKTOP-IEUDGS5",
+  "martini_dir": "C:\\Users\\BNI\\cgmd-runs\\martini3\\martini-forcefields-main\\martini_forcefields\\regular\\v3.0.0\\gmx_files",
+  "martini_how": "cache",
+  "probe_job": "20261102T012610-ff73",
+  "probe_status": "ok",
+  "probe_summary": "cgmd probe: gmx 2025.1 | python 3.12.10 | martini3 found",
+  "python": "C:\\Users\\BNI\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "workstation_online": true
+}

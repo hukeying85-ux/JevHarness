@@ -1,0 +1,70 @@
+{
+  "0d9753122e6233ff": {
+    "args": {
+      "mode": "run",
+      "ns": 100.0,
+      "prod_timeout": 3000,
+      "resume": true,
+      "timeout_s": 3300,
+      "workdir": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-094058"
+    },
+    "job_id": "20261102T015308-01d4",
+    "kind": "cgmd",
+    "seconds": 749.98,
+    "sent_at": "2026-11-02T01:53:09",
+    "state": "answered",
+    "status": "ok"
+  },
+  "409cbd8b0790332f": {
+    "args": {
+      "timeout_s": 240
+    },
+    "job_id": "20261102T020731-cadb",
+    "kind": "ping",
+    "seconds": 0.45,
+    "sent_at": "2026-11-02T02:07:32",
+    "state": "answered",
+    "status": "ok"
+  },
+  "5640244969976f72": {
+    "args": {
+      "mode": "probe",
+      "timeout_s": 300
+    },
+    "job_id": "20261102T013929-5019",
+    "kind": "cgmd",
+    "seconds": 3.54,
+    "sent_at": "2026-11-02T01:39:30",
+    "state": "answered",
+    "status": "ok"
+  },
+  "727d6b0c742bed86": {
+    "args": {
+      "mode": "run",
+      "ns": 50.0,
+      "prod_timeout": 3000,
+      "timeout_s": 3300,
+      "workdir": "C:\\Users\\BNI\\cgmd-runs\\cg-20261102-094058"
+    },
+    "job_id": "20261102T014115-cf33",
+    "kind": "cgmd",
+    "seconds": 649.91,
+    "sent_at": "2026-11-02T01:41:16",
+    "state": "answered",
+    "status": "ok"
+  },
+  "cf0d914a776215bd": {
+    "args": {
+      "mode": "build",
+      "salt_m": 0.15,
+      "sequence": "YLSLLQR",
+      "timeout_s": 900
+    },
+    "job_id": "20261102T014012-224b",
+    "kind": "cgmd",
+    "seconds": 1.1,
+    "sent_at": "2026-11-02T01:40:13",
+    "state": "answered",
+    "status": "ok"
+  }
+}

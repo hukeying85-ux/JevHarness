@@ -1,0 +1,37 @@
+{
+    "schema":  "cgmd.mailbox.result.v1",
+    "id":  "20261030T070202-f454",
+    "kind":  "ping",
+    "status":  "ok",
+    "summary":  "DESKTOP-IEUDGS5 alive, gmx 2025.1, 1 gpu(s)",
+    "detail":  {
+                   "host":  "DESKTOP-IEUDGS5",
+                   "user":  "BNI",
+                   "gmx":  "F:\\gromacs-2025.1-SM86\\gromacs-2025.1-SM86\\bin\\gmx.exe",
+                   "version":  "2025.1",
+                   "gpus":  [
+                                "NVIDIA RTX A4000, 596.71, 16376 MiB"
+                            ],
+                   "cpus":  48,
+                   "lan":  [
+                               "100.84.137.117",
+                               "172.20.32.1",
+                               "192.168.110.226",
+                               "172.17.240.1"
+                           ],
+                   "bridge_port":  8765,
+                   "bridge_hint":  "python3 -m core.desk_bridge ping --host \u003clan address above\u003e",
+                   "time":  "2026-10-30T15:03:00+08:00",
+                   "ready":  true
+               },
+    "logs_tail":  [
+
+                  ],
+    "note":  "",
+    "requested_by":  "user",
+    "peer":  "hukeying85-ux/JevHarness",
+    "worker":  "DESKTOP-IEUDGS5",
+    "started_at":  "2026-10-30T15:02:59+08:00",
+    "finished_at":  "2026-10-30T15:03:00+08:00",
+    "seconds":  0.47
+}
